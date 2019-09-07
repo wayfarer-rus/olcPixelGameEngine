@@ -428,16 +428,16 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
         var d = 3 - 2 * radius
         if (radius <= 0) return
 
-        val drawline: (Int, Int, Int) -> Unit = { sx, ex, ny ->
+        val drawLine: (Int, Int, Int) -> Unit = { sx, ex, ny ->
             for (i in sx..ex) draw(i, ny, p)
         }
 
         while (y0 >= x0) {
             // Modified to draw scan-lines instead of edges
-            drawline(x - x0, x + x0, y - y0)
-            drawline(x - y0, x + y0, y - x0)
-            drawline(x - x0, x + x0, y + y0)
-            drawline(x - y0, x + y0, y + x0)
+            drawLine(x - x0, x + x0, y - y0)
+            drawLine(x - y0, x + y0, y - x0)
+            drawLine(x - x0, x + x0, y + y0)
+            drawLine(x - y0, x + y0, y + x0)
             d += if (d < 0) 4 * x0++ + 6
             else 4 * (x0++ - y0--) + 10
         }

@@ -26,8 +26,6 @@ class Example : PixelGameEngineImpl() {
         drawString(10, 10, "Mouse: [${getMouseX()}; ${getMouseY()}]\nWheel: ${getMouseWheel()}", Pixel.DARK_GREEN)
         drawString(10, 30, "These keys\nare pressed:\n$pressedKeys", Pixel.YELLOW)
 
-//        fillTriangle(100 to 100, 150 to 120, 90 to 110, Pixel.DARK_GREEN)
-
         drawCircle(getMouseX(), getMouseY(), 1)
         return true
     }
