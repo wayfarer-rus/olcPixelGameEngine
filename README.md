@@ -4,7 +4,7 @@ kotlin-native port of olcPixelGameEngine, a tool used in javidx9's YouTube video
 Tested on windows 10 and macOS Mojave
 
 # Thanks and Inspirations
-All credit goes to https://github.com/OneLoneCoder/olcPixelGameEngine
+All credit goes to https://github.com/OneLoneCoder
 
 Huge thanks to the awesome dude who created this: https://github.com/Dominaezzz/kgl
 
