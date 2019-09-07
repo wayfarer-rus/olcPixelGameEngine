@@ -1,0 +1,20 @@
+
+# olc game engine
+https://github.com/OneLoneCoder/olcPixelGameEngine/blob/master/olcPixelGameEngine.h
+
+# csv parser example
+https://github.com/JetBrains/kotlin-native/blob/master/samples/csvparser/src/csvParserMain/kotlin/CsvParser.kt
+
+# sprite editor source
+https://github.com/Toyz/olcSpriteEditor/tree/master/Sprite%20Editor
+
+# info on glut
+http://www.linuxfocus.org/Russian/January1998/article16.html
+
+# cross-platform kotlin gl lib
+https://github.com/Dominaezzz/kgl
+https://github.com/Dominaezzz/kgl-opengl-samples/blob/master/src/nativeMain/kotlin/triangle/Main.kt
+
+# info on texture mapping
+https://github.com/opengl-tutorials/ogl/blob/master/tutorial14_render_to_texture
+!!! https://learnopengl.com/In-Practice/2D-Game/Rendering-Sprites
