@@ -316,8 +316,8 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
     }
 
     override fun clear(p: Pixel) {
-        pDrawTarget.SetPixels(Array(pDrawTarget.GetPixels().size) { Pixel(p.n) })
-        Sprite.nOverdrawCount += pDrawTarget.GetPixels().size
+        pDrawTarget.SetPixels(UIntArray(pDrawTarget.GetData().size) { p.n })
+        Sprite.nOverdrawCount += pDrawTarget.GetData().size
     }
 
     override fun drawLine(start: Pair<Int, Int>, end: Pair<Int, Int>, p: Pixel, pattern: UInt) {

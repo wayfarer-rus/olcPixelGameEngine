@@ -69,10 +69,7 @@ interface Sprite {
     fun GetData(): UIntArray
 
     @ExperimentalUnsignedTypes
-    fun GetPixels(): Array<Pixel>
-
-    @ExperimentalUnsignedTypes
-    fun SetPixels(newColData: Array<Pixel>)
+    fun SetPixels(newColData: UIntArray)
 
     enum class Mode { NORMAL, PERIODIC }
 
@@ -99,7 +96,7 @@ class SpriteImpl : Sprite {
     constructor(w: Int, h: Int) {
         width = w
         height = h
-        pColData = Array(width * height) { Pixel() }
+        pColData = UIntArray(width * height)//Array(width * height) { Pixel() }
     }
 
     @ExperimentalUnsignedTypes
@@ -113,11 +110,11 @@ class SpriteImpl : Sprite {
     override fun GetPixel(x: Int, y: Int): Pixel {
         return if (modeSample == Sprite.Mode.NORMAL) {
             if (x in 0 until width && y in 0 until height)
-                pColData[y * width + x]
+                Pixel(pColData[y * width + x])
             else
                 Pixel(0u)
         } else {
-            pColData[abs(y % height) * width + abs(x % width)]
+            Pixel(pColData[abs(y % height) * width + abs(x % width)])
         }
     }
 
@@ -125,7 +122,7 @@ class SpriteImpl : Sprite {
     override fun SetPixel(x: Int, y: Int, p: Pixel): Boolean {
         nOverdrawCount++
         return if (x in 0 until width && y in 0 until height) {
-            pColData[y * width + x] = p
+            pColData[y * width + x] = p.n
             true
         } else
             false
@@ -163,16 +160,11 @@ class SpriteImpl : Sprite {
 
     @ExperimentalUnsignedTypes
     override fun GetData(): UIntArray {
-        return pColData.map { it.n }.toUIntArray()
-    }
-
-    @ExperimentalUnsignedTypes
-    override fun GetPixels(): Array<Pixel> {
         return pColData
     }
 
     @ExperimentalUnsignedTypes
-    override fun SetPixels(newColData: Array<Pixel>) {
+    override fun SetPixels(newColData: UIntArray) {
         pColData = newColData
     }
 
@@ -201,8 +193,8 @@ class SpriteImpl : Sprite {
                         .map { it.toUByte() }
                         .chunked(4)
                         .map { (r, g, b, a) ->
-                            Pixel(r, g, b, a)
-                        }.toTypedArray()
+                            Pixel(r, g, b, a).n
+                        }.toUIntArray()
 
                     rcode.OK
                 }
@@ -227,8 +219,7 @@ class SpriteImpl : Sprite {
 
         try {
             fwrite(intArrayOf(width, height).refTo(0), (Int.SIZE_BYTES * 2).toULong(), 1, file)
-            val data = pColData.map { it.n }.toUIntArray()
-            fwrite(data.refTo(0), (data.size * UInt.SIZE_BYTES).toULong(), 1, file)
+            fwrite(pColData.refTo(0), (pColData.size * UInt.SIZE_BYTES).toULong(), 1, file)
             fflush(file)
         } finally {
             fclose(file)
@@ -241,7 +232,7 @@ class SpriteImpl : Sprite {
     override var height = 0
     var modeSample: Sprite.Mode = Sprite.Mode.NORMAL
     @ExperimentalUnsignedTypes
-    lateinit var pColData: Array<Pixel>
+    var pColData: UIntArray = UIntArray(0)
 }
 
 @ExperimentalUnsignedTypes

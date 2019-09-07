@@ -22,13 +22,23 @@ kotlin {
     }
 
     sourceSets {
-        val commonMain by getting {
+        val nativeMain by creating {
             kotlin.srcDir("src")
             resources.srcDir("res")
             dependencies {
                 implementation("com.kgl:kgl-glfw:0.1.5")
                 implementation("com.kgl:kgl-opengl:0.1.5")
             }
+        }
+
+        hostTarget.compilations.all {
+            defaultSourceSet {
+                dependsOn(nativeMain)
+            }
+        }
+
+        all {
+            languageSettings.enableLanguageFeature("InlineClasses")
         }
     }
 

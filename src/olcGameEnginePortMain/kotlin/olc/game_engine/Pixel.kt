@@ -39,14 +39,10 @@ Patreon:	https://www.patreon.com/javidx9
  */
 
 @ExperimentalUnsignedTypes
-class Pixel {
-    constructor(p: UInt) {
-        this.n = p
-    }
+inline class Pixel(inline val n: UInt = 0xFF000000u) {
 
-    constructor(red: UByte, green: UByte, blue: UByte, alpha: UByte = 255u) {
-        this.n = (alpha.toUInt() shl 24) or (blue.toUInt() shl 16) or (green.toUInt() shl 8) or red.toUInt()
-    }
+    constructor(red: UByte, green: UByte, blue: UByte, alpha: UByte = 255u) :
+            this((alpha.toUInt() shl 24) or (blue.toUInt() shl 16) or (green.toUInt() shl 8) or red.toUInt())
 
     constructor(red: Int, green: Int, blue: Int, alpha: Int = 0xFF) : this(
         red.toUByte(),
@@ -57,35 +53,35 @@ class Pixel {
 
     constructor(red: Float, green: Float, blue: Float) : this(red.toInt(), green.toInt(), blue.toInt())
 
-    constructor()
-
     val rf: Float
-        get() = r.toFloat()
+        inline get() = r.toFloat()
     val gf: Float
-        get() = g.toFloat()
+        inline get() = g.toFloat()
     val bf: Float
-        get() = b.toFloat()
+        inline get() = b.toFloat()
     val af: Float
-        get() = a.toFloat()
+        inline get() = a.toFloat()
 
     val r: UByte
-        get() {
+        inline get() {
             return (0x000000FFu and n).toUByte()
         }
     val g: UByte
-        get() {
+        inline get() {
             return (0x0000FF00u and n shr 8).toUByte()
         }
     val b: UByte
-        get() {
+        inline get() {
             return (0x00FF0000u and n shr 16).toUByte()
         }
     val a: UByte
-        get() {
+        inline get() {
             return (0xFF000000u and n shr 24).toUByte()
         }
-
-    var n: UInt = 0xFF000000u
+    val ni: Int
+        inline get() {
+            return n.toInt()
+        }
 
     enum class Mode {
         NORMAL, MASK, ALPHA, CUSTOM
