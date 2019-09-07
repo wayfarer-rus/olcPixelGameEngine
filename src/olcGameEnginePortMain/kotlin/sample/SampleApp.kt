@@ -13,7 +13,7 @@ class Example : PixelGameEngineImpl() {
         return true
     }
 
-    override fun onUserUpdate(elapsedTime: Long): Boolean {
+    override fun onUserUpdate(elapsedTime: Float): Boolean {
         clear(Pixel.DARK_BLUE)
         for (x in 0 until screenWidth())
             for (y in screenHeight() / 2 until screenHeight())

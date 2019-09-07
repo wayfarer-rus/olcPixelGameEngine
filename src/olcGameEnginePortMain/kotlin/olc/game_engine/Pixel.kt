@@ -45,13 +45,11 @@ inline class Pixel(inline val n: UInt = 0xFF000000u) {
             this((alpha.toUInt() shl 24) or (blue.toUInt() shl 16) or (green.toUInt() shl 8) or red.toUInt())
 
     constructor(red: Int, green: Int, blue: Int, alpha: Int = 0xFF) : this(
-        red.toUByte(),
-        green.toUByte(),
-        blue.toUByte(),
-        alpha.toUByte()
+        red.toUByte(), green.toUByte(), blue.toUByte(), alpha.toUByte()
     )
 
-    constructor(red: Float, green: Float, blue: Float) : this(red.toInt(), green.toInt(), blue.toInt())
+    constructor(red: Float, green: Float, blue: Float) :
+            this(red.toInt(), green.toInt(), blue.toInt())
 
     val rf: Float
         inline get() = r.toFloat()

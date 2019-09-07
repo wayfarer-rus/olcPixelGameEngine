@@ -88,7 +88,7 @@ interface PixelGameEngine {
     fun start(): rcode
 
     fun onUserCreate(): Boolean
-    fun onUserUpdate(elapsedTime: Long): Boolean
+    fun onUserUpdate(elapsedTime: Float): Boolean
 //    fun onUserDestroy(): Boolean
 
     fun isFocused(): Boolean
@@ -150,7 +150,7 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
             return rcode.FAIL
 
         olcConstructFontsheet()
-        pDefaultDrawTarget = SpriteImpl(nScreenWidth, nScreenHeight)
+        pDefaultDrawTarget = Sprite(nScreenWidth, nScreenHeight)
         setDrawTarget(pDefaultDrawTarget)
         return rcode.OK
     }
@@ -254,10 +254,10 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
     override fun draw(x: Int, y: Int, p: Pixel) {
         pDrawTarget.apply {
             when (nPixelMode) {
-                Pixel.Mode.NORMAL -> this.SetPixel(x, y, p)
-                Pixel.Mode.MASK -> if (255.toUByte() == p.a) this.SetPixel(x, y, p)
+                Pixel.Mode.NORMAL -> this.setPixel(x, y, p)
+                Pixel.Mode.MASK -> if (255.toUByte() == p.a) this.setPixel(x, y, p)
                 Pixel.Mode.ALPHA -> {
-                    val d = this.GetPixel(x, y).let { d ->
+                    val d = this.getPixel(x, y).let { d ->
                         val a = (p.af / 255.0f) * fBlendFactor
                         val c = 1.0f - a
                         val r = a * p.rf + c * d.rf
@@ -266,10 +266,10 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
                         Pixel(r, g, b)
                     }
 
-                    this.SetPixel(x, y, d)
+                    this.setPixel(x, y, d)
                 }
-                Pixel.Mode.CUSTOM -> this.SetPixel(
-                    x, y, funcPixelMode?.invoke(x, y, p, this.GetPixel(x, y)) ?: Pixel(0u)
+                Pixel.Mode.CUSTOM -> this.setPixel(
+                    x, y, funcPixelMode?.invoke(x, y, p, this.getPixel(x, y)) ?: Pixel(0u)
                 )
             }
         }
@@ -294,7 +294,7 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
                 if (scale > 1) {
                     for (i in 0 until 8)
                         for (j in 0 until 8)
-                            if (fontSprite.GetPixel(i + ox * 8, j + oy * 8).r > 0.toUByte())
+                            if (fontSprite.getPixel(i + ox * 8, j + oy * 8).r > 0.toUByte())
                                 for (`is` in 0 until scale)
                                     for (js in 0 until scale)
                                         draw(
@@ -305,7 +305,7 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
                 } else {
                     for (i in 0 until 8)
                         for (j in 0 until 8)
-                            if (fontSprite.GetPixel(i + ox * 8, j + oy * 8).r > 0.toUByte())
+                            if (fontSprite.getPixel(i + ox * 8, j + oy * 8).r > 0.toUByte())
                                 draw(x + sx + i, y + sy + j, col)
                 }
                 sx += 8 * scale
@@ -316,8 +316,8 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
     }
 
     override fun clear(p: Pixel) {
-        pDrawTarget.SetPixels(UIntArray(pDrawTarget.GetData().size) { p.n })
-        Sprite.nOverdrawCount += pDrawTarget.GetData().size
+        pDrawTarget.data = UIntArray(pDrawTarget.data.size) { p.n }
+        Sprite.nOverdrawCount += pDrawTarget.data.size
     }
 
     override fun drawLine(start: Pair<Int, Int>, end: Pair<Int, Int>, p: Pixel, pattern: UInt) {
@@ -527,12 +527,12 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
                             draw(
                                 x + (i * scale) + `is`,
                                 y + (j * scale) + js,
-                                sprite.GetPixel(i, j)
+                                sprite.getPixel(i, j)
                             )
         } else {
             for (i in 0 until sprite.width)
                 for (j in 0 until sprite.height)
-                    draw(x + i, y + j, sprite.GetPixel(i, j))
+                    draw(x + i, y + j, sprite.getPixel(i, j))
         }
     }
 
@@ -545,12 +545,12 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
                             draw(
                                 x + (i * scale) + `is`,
                                 y + (j * scale) + js,
-                                sprite.GetPixel(i + ox, j + oy)
+                                sprite.getPixel(i + ox, j + oy)
                             )
         } else {
             for (i in 0 until w)
                 for (j in 0 until h)
-                    draw(x + i, y + j, sprite.GetPixel(i + ox, j + oy))
+                    draw(x + i, y + j, sprite.getPixel(i + ox, j + oy))
         }
     }
 
@@ -599,6 +599,7 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
 
         var tp1 = getTimeNanos()
         var tp2: Long
+        var elapsedTime: Float
 
         do {
             glViewport(nViewX, nViewY, nViewW, nViewH)
@@ -606,7 +607,7 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
             glUseProgram(programId)
 
             tp2 = getTimeNanos()
-            val elapsedTime = tp2 - tp1
+            elapsedTime = (tp2 - tp1) / 1_000_000_000.0F
             tp1 = tp2
 
             olcRefreshKeyboardAndMouseState()
@@ -630,7 +631,7 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
                 nScreenHeight,
                 GL_RGBA,
                 GL_UNSIGNED_BYTE,
-                pDrawTarget.GetData().toCValues()
+                pDrawTarget.data.toCValues()
             )
 
             glUniform1i(texID, 0)
@@ -642,7 +643,7 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
             window.swapBuffers()
 
             // Update Title Bar
-            fFrameTimer += elapsedTime / 1_000_000_000.0F
+            fFrameTimer += elapsedTime
             nFrameCount++
 
             if (fFrameTimer >= 1.0f) {
@@ -793,7 +794,7 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
             nScreenWidth,
             nScreenHeight,
             0, GL_RGBA, GL_UNSIGNED_BYTE,
-            this.pDefaultDrawTarget.GetData().toCValues()
+            this.pDefaultDrawTarget.data.toCValues()
         )
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST.toInt())
@@ -903,7 +904,7 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
         data += "O`000P08Od400g`<3V=P0G`673IP0`@3>1`00P@6O`P00g`<O`000GP800000000"
         data += "?P9PL020O`<`N3R0@E4HC7b0@ET<ATB0@@l6C4B0O`H3N7b0?P01L3R000000020"
 
-        fontSprite = SpriteImpl(128, 48)
+        fontSprite = Sprite(128, 48)
         var px = 0
         var py = 0
 
@@ -917,7 +918,7 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
             for (i in 0 until 24) {
                 val k = if ((r and (1 shl i).toUInt()) > 0U) 255 else 0
 
-                fontSprite.SetPixel(px, py, Pixel(k, k, k, k))
+                fontSprite.setPixel(px, py, Pixel(k, k, k, k))
 
                 if (++py == 48) {
                     px++

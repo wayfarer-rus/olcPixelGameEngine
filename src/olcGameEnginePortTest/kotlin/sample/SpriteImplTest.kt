@@ -1,7 +1,7 @@
 package sample
 
 import kotlinx.cinterop.CPointer
-import olc.game_engine.SpriteImpl
+import olc.game_engine.Sprite
 import olc.game_engine.fileToByteArray
 import olc.game_engine.rcode
 import platform.posix.FILE
@@ -32,20 +32,20 @@ class SpriteImplTest {
 
     @Test
     fun testLoadFromPGESprFile() {
-        val sprite = SpriteImpl()
+        val sprite = Sprite()
         val res =
-            sprite.LoadFromPGESprFile("../../../../src/olcGameEnginePortTest/resources/SeditSlimeTransparent.spr", null)
+            sprite.loadFromPGESprFile("../../../../src/olcGameEnginePortTest/resources/SeditSlimeTransparent.spr", null)
         assertEquals(rcode.OK, res)
     }
 
     @Test
     fun testSaveToPGESprFile() {
-        val sprite = SpriteImpl()
+        val sprite = Sprite()
         var res =
-            sprite.LoadFromPGESprFile("../../../../src/olcGameEnginePortTest/resources/SeditSlimeTransparent.spr", null)
+            sprite.loadFromPGESprFile("../../../../src/olcGameEnginePortTest/resources/SeditSlimeTransparent.spr", null)
         assertEquals(rcode.OK, res)
 
-        res = sprite.SaveToPGESprFile("../../../../src/olcGameEnginePortTest/resources/tmp_copy.spr")
+        res = sprite.saveToPGESprFile("../../../../src/olcGameEnginePortTest/resources/tmp_copy.spr")
         assertEquals(rcode.OK, res)
     }
 }

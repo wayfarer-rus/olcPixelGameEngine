@@ -1,7 +1,6 @@
 package olc.game_engine
 
 import kotlinx.cinterop.*
-import olc.game_engine.Sprite.Companion.nOverdrawCount
 import platform.posix.*
 import kotlin.math.floor
 import kotlin.math.max
@@ -45,32 +44,7 @@ Homepage:	https://www.onelonecoder.com
 Patreon:	https://www.patreon.com/javidx9
  */
 
-interface Sprite {
-    val width: Int
-    var height: Int
-
-    fun LoadFromFile(imageFile: String, pack: ResourcePack? = null): rcode
-    fun LoadFromPGESprFile(imageFile: String, pack: ResourcePack? = null): rcode
-    fun SaveToPGESprFile(imageFile: String): rcode
-    fun SetSampleMode(mode: Mode = Mode.NORMAL)
-    @ExperimentalUnsignedTypes
-    fun GetPixel(x: Int, y: Int): Pixel
-
-    @ExperimentalUnsignedTypes
-    fun SetPixel(x: Int, y: Int, p: Pixel): Boolean
-
-    @ExperimentalUnsignedTypes
-    fun Sample(x: Float, y: Float): Pixel
-
-    @ExperimentalUnsignedTypes
-    fun SampleBL(u: Float, v: Float): Pixel
-
-    @ExperimentalUnsignedTypes
-    fun GetData(): UIntArray
-
-    @ExperimentalUnsignedTypes
-    fun SetPixels(newColData: UIntArray)
-
+class Sprite @ExperimentalUnsignedTypes constructor(inline var data: UIntArray = UIntArray(0)) {
     enum class Mode { NORMAL, PERIODIC }
 
     @ThreadLocal
@@ -78,102 +52,84 @@ interface Sprite {
         var nOverdrawCount: Int = 0
     }
 
-}
-
-class SpriteImpl : Sprite {
-    constructor()
-
-    constructor(imageFile: String) {
-        LoadFromFile(imageFile)
+    @ExperimentalUnsignedTypes
+    constructor(imageFile: String) : this() {
+        loadFromFile(imageFile)
     }
 
     @ExperimentalUnsignedTypes
-    constructor(imageFile: String, pack: ResourcePack?) {
-        LoadFromPGESprFile(imageFile, pack)
+    constructor(imageFile: String, pack: ResourcePack?) : this() {
+        loadFromPGESprFile(imageFile, pack)
     }
 
     @ExperimentalUnsignedTypes
-    constructor(w: Int, h: Int) {
+    constructor(w: Int, h: Int) : this(UIntArray(w * h)) {
         width = w
         height = h
-        pColData = UIntArray(width * height)//Array(width * height) { Pixel() }
     }
 
-    @ExperimentalUnsignedTypes
-    constructor(nScreenWidth: UInt, nScreenHeight: UInt) : this(nScreenWidth.toInt(), nScreenHeight.toInt())
-
-    override fun SetSampleMode(mode: Sprite.Mode) {
+    fun setSampleMode(mode: Mode) {
         modeSample = mode
     }
 
     @ExperimentalUnsignedTypes
-    override fun GetPixel(x: Int, y: Int): Pixel {
-        return if (modeSample == Sprite.Mode.NORMAL) {
+    fun getPixel(x: Int, y: Int): Pixel {
+        return if (modeSample == Mode.NORMAL) {
             if (x in 0 until width && y in 0 until height)
-                Pixel(pColData[y * width + x])
+                Pixel(data[y * width + x])
             else
                 Pixel(0u)
         } else {
-            Pixel(pColData[abs(y % height) * width + abs(x % width)])
+            Pixel(data[abs(y % height) * width + abs(x % width)])
         }
     }
 
     @ExperimentalUnsignedTypes
-    override fun SetPixel(x: Int, y: Int, p: Pixel): Boolean {
+    fun setPixel(x: Int, y: Int, p: Pixel): Boolean {
         nOverdrawCount++
         return if (x in 0 until width && y in 0 until height) {
-            pColData[y * width + x] = p.n
+            data[y * width + x] = p.n
             true
         } else
             false
     }
 
     @ExperimentalUnsignedTypes
-    override fun Sample(x: Float, y: Float): Pixel {
+    fun sample(x: Float, y: Float): Pixel {
         val sx = min((x * width).toInt(), width - 1)
         val sy = min((y * height).toInt(), height - 1)
-        return GetPixel(sx, sy)
+        return getPixel(sx, sy)
     }
 
     @ExperimentalUnsignedTypes
-    override fun SampleBL(u: Float, v: Float): Pixel {
+    fun sampleBL(u: Float, v: Float): Pixel {
         val U = u * width - 0.5f
         val V = v * height - 0.5f
         val x = floor(U).toInt() // cast to int rounds toward zero, not downward
         val y = floor(V).toInt() // Thanks @joshinils
-        val u_ratio = U - x
-        val v_ratio = V - y
-        val u_opposite = 1 - u_ratio
-        val v_opposite = 1 - v_ratio
+        val uRatio = U - x
+        val vRatio = V - y
+        val uOpposite = 1 - uRatio
+        val vOpposite = 1 - vRatio
 
-        val p1 = GetPixel(max(x, 0), max(y, 0))
-        val p2 = GetPixel(min(x + 1, width - 1), max(y, 0))
-        val p3 = GetPixel(max(x, 0), min(y + 1, height - 1))
-        val p4 = GetPixel(min(x + 1, width - 1), min(y + 1, height - 1))
+        val p1 = getPixel(max(x, 0), max(y, 0))
+        val p2 = getPixel(min(x + 1, width - 1), max(y, 0))
+        val p3 = getPixel(max(x, 0), min(y + 1, height - 1))
+        val p4 = getPixel(min(x + 1, width - 1), min(y + 1, height - 1))
 
         return Pixel(
-            ((p1.rf * u_opposite + p2.rf * u_ratio) * v_opposite + (p3.rf * u_opposite + p4.rf * u_ratio) * v_ratio).toUInt().toUByte(),
-            ((p1.gf * u_opposite + p2.gf * u_ratio) * v_opposite + (p3.gf * u_opposite + p4.gf * u_ratio) * v_ratio).toUInt().toUByte(),
-            ((p1.bf * u_opposite + p2.bf * u_ratio) * v_opposite + (p3.bf * u_opposite + p4.bf * u_ratio) * v_ratio).toUInt().toUByte()
+            ((p1.rf * uOpposite + p2.rf * uRatio) * vOpposite + (p3.rf * uOpposite + p4.rf * uRatio) * vRatio).toUInt().toUByte(),
+            ((p1.gf * uOpposite + p2.gf * uRatio) * vOpposite + (p3.gf * uOpposite + p4.gf * uRatio) * vRatio).toUInt().toUByte(),
+            ((p1.bf * uOpposite + p2.bf * uRatio) * vOpposite + (p3.bf * uOpposite + p4.bf * uRatio) * vRatio).toUInt().toUByte()
         )
     }
 
-    @ExperimentalUnsignedTypes
-    override fun GetData(): UIntArray {
-        return pColData
-    }
-
-    @ExperimentalUnsignedTypes
-    override fun SetPixels(newColData: UIntArray) {
-        pColData = newColData
-    }
-
-    override fun LoadFromFile(imageFile: String, pack: ResourcePack?): rcode {
+    fun loadFromFile(imageFile: String, pack: ResourcePack? = null): rcode {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
     @ExperimentalUnsignedTypes
-    override fun LoadFromPGESprFile(imageFile: String, pack: ResourcePack?): rcode {
+    fun loadFromPGESprFile(imageFile: String, pack: ResourcePack?): rcode {
         val readData: (buffer: ByteArray) -> rcode = { buffer ->
             println("size: " + buffer.size)
 
@@ -189,7 +145,7 @@ class SpriteImpl : Sprite {
                     println("Failed because of the inconsistent file size")
                     rcode.FAIL
                 } else {
-                    pColData = buffer.slice(8 until buffer.size).take(width * height * UInt.SIZE_BYTES)
+                    data = buffer.slice(8 until buffer.size).take(width * height * UInt.SIZE_BYTES)
                         .map { it.toUByte() }
                         .chunked(4)
                         .map { (r, g, b, a) ->
@@ -214,12 +170,12 @@ class SpriteImpl : Sprite {
     }
 
     @ExperimentalUnsignedTypes
-    override fun SaveToPGESprFile(imageFile: String): rcode {
+    fun saveToPGESprFile(imageFile: String): rcode {
         val file: CPointer<FILE>? = fopen(imageFile, "w") ?: return rcode.FAIL
 
         try {
             fwrite(intArrayOf(width, height).refTo(0), (Int.SIZE_BYTES * 2).toULong(), 1, file)
-            fwrite(pColData.refTo(0), (pColData.size * UInt.SIZE_BYTES).toULong(), 1, file)
+            fwrite(data.refTo(0), (data.size * UInt.SIZE_BYTES).toULong(), 1, file)
             fflush(file)
         } finally {
             fclose(file)
@@ -228,11 +184,9 @@ class SpriteImpl : Sprite {
         return rcode.OK
     }
 
-    override var width = 0
-    override var height = 0
-    var modeSample: Sprite.Mode = Sprite.Mode.NORMAL
-    @ExperimentalUnsignedTypes
-    var pColData: UIntArray = UIntArray(0)
+    var width = 0
+    var height = 0
+    private var modeSample = Mode.NORMAL
 }
 
 @ExperimentalUnsignedTypes
