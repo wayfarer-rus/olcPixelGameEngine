@@ -4,9 +4,6 @@
     <facet type="kotlin-language" name="Kotlin">
       <configuration version="3" platform="Native " allPlatforms="Native []" useProjectSettings="false" isTestModule="true" externalProjectId="olcGameEnginePort">
         <sourceSets>
-          <sourceSet>olcGameEnginePort.nativeMain</sourceSet>
-          <sourceSet>olcGameEnginePort.commonTest</sourceSet>
-          <sourceSet>olcGameEnginePort.commonMain</sourceSet>
           <sourceSet>olcGameEnginePort.olcGameEnginePortMain</sourceSet>
         </sourceSets>
         <newMppModelJpsModuleKind>COMPILATION_AND_SOURCE_SET_HOLDER</newMppModelJpsModuleKind>

@@ -45,8 +45,8 @@ kotlin {
     hostTarget.apply {
         binaries {
             executable {
-                entryPoint = "sample.main"
-                runTask?.args("args")
+                entryPoint = "demos.fireworks.main"
+                runTask?.args("")
             }
         }
     }
