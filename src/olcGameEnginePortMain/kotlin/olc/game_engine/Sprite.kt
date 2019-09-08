@@ -75,10 +75,10 @@ class Sprite @ExperimentalUnsignedTypes constructor(inline var data: UIntArray =
     @ExperimentalUnsignedTypes
     fun getPixel(x: Int, y: Int): Pixel {
         return if (modeSample == Mode.NORMAL) {
-            if (x in 0 until width && y in 0 until height)
-                Pixel(data[y * width + x])
-            else
+            if (x < 0 || x > width || y < 0 || y > height)
                 Pixel(0u)
+            else
+                Pixel(data[y * width + x])
         } else {
             Pixel(data[abs(y % height) * width + abs(x % width)])
         }
@@ -87,11 +87,12 @@ class Sprite @ExperimentalUnsignedTypes constructor(inline var data: UIntArray =
     @ExperimentalUnsignedTypes
     fun setPixel(x: Int, y: Int, p: Pixel): Boolean {
         nOverdrawCount++
-        return if (x in 0 until width && y in 0 until height) {
-            data[y * width + x] = p.n
-            true
-        } else
-            false
+
+        if (x < 0 || x >= width || y < 0 || y >= height)
+            return false
+
+        data[y * width + x] = p.n
+        return true
     }
 
     @ExperimentalUnsignedTypes
@@ -129,7 +130,7 @@ class Sprite @ExperimentalUnsignedTypes constructor(inline var data: UIntArray =
     }
 
     @ExperimentalUnsignedTypes
-    fun loadFromPGESprFile(imageFile: String, pack: ResourcePack?): rcode {
+    fun loadFromPGESprFile(imageFile: String, pack: ResourcePack? = null): rcode {
         val readData: (buffer: ByteArray) -> rcode = { buffer ->
             println("size: " + buffer.size)
 

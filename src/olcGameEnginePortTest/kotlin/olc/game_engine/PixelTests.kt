@@ -1,6 +1,5 @@
-package sample
+package olc.game_engine
 
-import olc.game_engine.Pixel
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

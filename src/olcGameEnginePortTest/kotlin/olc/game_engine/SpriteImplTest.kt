@@ -1,9 +1,6 @@
-package sample
+package olc.game_engine
 
 import kotlinx.cinterop.CPointer
-import olc.game_engine.Sprite
-import olc.game_engine.fileToByteArray
-import olc.game_engine.rcode
 import platform.posix.FILE
 import platform.posix.fclose
 import platform.posix.fopen
@@ -18,7 +15,7 @@ class SpriteImplTest {
     @Test
     fun testReadSpriteFile() {
         val fh: CPointer<FILE>? =
-            fopen("../../../../src/olcGameEnginePortTest/resources/SeditSlimeTransparent.spr", "r")
+            fopen("src/olcGameEnginePortTest/resources/SeditSlimeTransparent.spr", "r")
         assertNotNull(fh)
 
         try {
@@ -34,7 +31,7 @@ class SpriteImplTest {
     fun testLoadFromPGESprFile() {
         val sprite = Sprite()
         val res =
-            sprite.loadFromPGESprFile("../../../../src/olcGameEnginePortTest/resources/SeditSlimeTransparent.spr", null)
+            sprite.loadFromPGESprFile("src/olcGameEnginePortTest/resources/SeditSlimeTransparent.spr", null)
         assertEquals(rcode.OK, res)
     }
 
@@ -42,10 +39,10 @@ class SpriteImplTest {
     fun testSaveToPGESprFile() {
         val sprite = Sprite()
         var res =
-            sprite.loadFromPGESprFile("../../../../src/olcGameEnginePortTest/resources/SeditSlimeTransparent.spr", null)
+            sprite.loadFromPGESprFile("src/olcGameEnginePortTest/resources/SeditSlimeTransparent.spr", null)
         assertEquals(rcode.OK, res)
 
-        res = sprite.saveToPGESprFile("../../../../src/olcGameEnginePortTest/resources/tmp_copy.spr")
+        res = sprite.saveToPGESprFile("src/olcGameEnginePortTest/resources/tmp_copy.spr")
         assertEquals(rcode.OK, res)
     }
 }

@@ -316,7 +316,9 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
     }
 
     override fun clear(p: Pixel) {
-        pDrawTarget.data = UIntArray(pDrawTarget.data.size) { p.n }
+        for (i in pDrawTarget.data.indices)
+            pDrawTarget.data[i] = p.n
+
         Sprite.nOverdrawCount += pDrawTarget.data.size
     }
 

@@ -16,12 +16,13 @@ class Example : PixelGameEngineImpl() {
     override fun onUserUpdate(elapsedTime: Float): Boolean {
         clear(Pixel.DARK_BLUE)
         for (x in 0 until screenWidth())
-            for (y in screenHeight() / 2 until screenHeight())
+            for (y in 0 until screenHeight())
                 draw(x, y, Pixel((rand() % 255), (rand() % 255), (rand() % 255)))
 
         val pressedKeys = Key.values().map { Pair(it, getKey(it)) }.filter { it.second.bPressed || it.second.bHeld }
             .joinToString { it.first.toString() }
 
+        fillRect(0, 0, screenWidth(), 62, Pixel.BLACK)
         drawString(10, 1, "Focus: [${isFocused()}; ${isMouseInWindow()}]", Pixel.GREEN)
         drawString(10, 10, "Mouse: [${getMouseX()}; ${getMouseY()}]\nWheel: ${getMouseWheel()}", Pixel.DARK_GREEN)
         drawString(10, 30, "These keys\nare pressed:\n$pressedKeys", Pixel.YELLOW)
