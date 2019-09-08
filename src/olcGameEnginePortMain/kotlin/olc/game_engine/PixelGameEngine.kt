@@ -650,7 +650,7 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
 
             if (fFrameTimer >= 1.0f) {
                 fFrameTimer -= 1.0f
-                val sTitle = "OneLoneCoder.com - Pixel Game Engine - $appName - FPS: $nFrameCount"
+                val sTitle = "$appName - FPS: $nFrameCount"
                 fps = nFrameCount
                 window.setTitle(sTitle)
                 nFrameCount = 0
