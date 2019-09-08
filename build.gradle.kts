@@ -44,9 +44,9 @@ kotlin {
 
     hostTarget.apply {
         binaries {
-            executable {
+            executable("olcGameEnginePort") {
                 entryPoint = "sample.main"
-                runTask?.args("args")
+                runTask?.args("")
             }
         }
     }
