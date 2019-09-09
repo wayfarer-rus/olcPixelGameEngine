@@ -15,6 +15,7 @@ open class SpaceObject(
     var vy: Float = 0.0f,
     open var angle: Float = 0.0f
 ) {
+    var time = 0.0f
     var dead = false
     val yi: Int
         inline get() = y.roundToInt()
@@ -83,7 +84,7 @@ class AsteroidsDemo : PixelGameEngineImpl() {
         player.y = getDrawTargetHeight() / 2f
         player.dead = false
         player.vx = 0.0f; player.vy = 0.0f
-        player.angle = 0.0f
+        player.angle = (PI / 2).toFloat()
 
         asteroids.add(
             Asteroid(
@@ -102,21 +103,28 @@ class AsteroidsDemo : PixelGameEngineImpl() {
         return true
     }
 
+    private fun messageInCenter(msg: String, scale: Int, color: Pixel) {
+        drawString(
+            getDrawTargetWidth() / 2 - (msg.length * 8 * 4) / 2,
+            getDrawTargetHeight() / 2 - 8 * 2,
+            msg,
+            color,
+            scale = scale
+        )
+    }
+
     override fun onUserUpdate(elapsedTime: Float): Boolean {
         clear(Pixel(spaceColor))
 
-        if (player.dead) {
-            val msg = "WASTED!"
-            drawString(
-                getDrawTargetWidth() / 2 - (msg.length * 8 * 4) / 2,
-                getDrawTargetHeight() / 2 - 8 * 2,
-                msg,
-                Pixel.DARK_RED,
-                scale = 4
-            )
-
+        if (asteroids.isEmpty()) {
+            messageInCenter("GAME OVER!", 4, Pixel.YELLOW)
             if (getKey(Key.ENTER).bPressed) reset()
+            return true
+        }
 
+        if (player.dead) {
+            messageInCenter("WASTED!", 4, Pixel.DARK_RED)
+            if (getKey(Key.ENTER).bPressed) reset()
             return true
         }
 
@@ -131,7 +139,7 @@ class AsteroidsDemo : PixelGameEngineImpl() {
 
         with(player) {
             // player can shoot only 3 bullets
-            if (getKey(Key.SPACE).bPressed && bullets.size < 3) {
+            if (getKey(Key.SPACE).bPressed && bullets.size < 1) {
                 // shoot
                 bullets.add(
                     SpaceObject(
@@ -146,6 +154,15 @@ class AsteroidsDemo : PixelGameEngineImpl() {
             if (getKey(Key.UP).bHeld) {
                 // thrust
                 this.accelerate(elapsedTime)
+                val rpi = Random.nextDouble(PI - (1.0 / 18.0) * PI, PI + (1.0 / 18.0) * PI).toFloat()
+                exhaust.add(
+                    SpaceObject(
+                        this.x,
+                        this.y,
+                        (this.vx + 20.0f) * sin(this.angle - rpi),
+                        -(this.vy + 20.0f) * cos(this.angle - rpi)
+                    )
+                )
             }
 
             if (getKey(Key.LEFT).bPressed || getKey(Key.LEFT).bHeld) {
@@ -169,6 +186,18 @@ class AsteroidsDemo : PixelGameEngineImpl() {
                 this.dead = true
             }
             drawTriangle(this[0], this[1], this[2])
+        }
+
+        exhaust.forEach {
+            it.move(elapsedTime)
+            it.time += elapsedTime
+            val (nx, ny) = wrapFloatCoordinates(Pair(it.x, it.y))
+            it.x = nx; it.y = ny
+            draw(it.xi, it.yi)
+
+            if (it.time > 0.3) {
+                it.dead = true
+            }
         }
 
         bullets.forEach {
@@ -264,7 +293,10 @@ class AsteroidsDemo : PixelGameEngineImpl() {
 
         bullets.removeAll { it.dead }
         asteroids.removeAll { it.dead }
-        drawString(5, 5, "Score: $score")
+        exhaust.removeAll { it.dead }
+        val msg = "Score: $score"
+        fillRect(4, 4, msg.length * 8 + 6, 10, Pixel.BLACK)
+        drawString(5, 5, msg)
 
         return true
     }
@@ -296,7 +328,8 @@ class AsteroidsDemo : PixelGameEngineImpl() {
 
     private lateinit var score: String
     private val bullets: MutableList<SpaceObject> = mutableListOf()
-    private var asteroids: MutableList<Asteroid> = mutableListOf()
+    private val asteroids: MutableList<Asteroid> = mutableListOf()
+    private val exhaust: MutableList<SpaceObject> = mutableListOf()
     private val player = Ship(Triple(Pair(0.0f, -5.0f), Pair(-2.5f, +2.5f), Pair(+2.5f, +2.5f)))
     private val letters = mapOf(
         "H" to Pixel.YELLOW,
@@ -313,6 +346,7 @@ class AsteroidsDemo : PixelGameEngineImpl() {
 
     companion object {
         private const val spaceColor = 0xFF4c4a41u
+        private const val transparentWhite = 0x00FFFFFFu
     }
 }
 
