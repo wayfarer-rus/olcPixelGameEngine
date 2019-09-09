@@ -73,10 +73,10 @@ class Sprite @ExperimentalUnsignedTypes constructor(inline var data: UIntArray =
     }
 
     @ExperimentalUnsignedTypes
-    fun getPixel(x: Int, y: Int): Pixel {
+    fun getPixel(x: Int, y: Int): Pixel? {
         return if (modeSample == Mode.NORMAL) {
-            if (x < 0 || x > width || y < 0 || y > height)
-                Pixel(0u)
+            if (x < 0 || x >= width || y < 0 || y >= height)
+                null
             else
                 Pixel(data[y * width + x])
         } else {
@@ -96,7 +96,7 @@ class Sprite @ExperimentalUnsignedTypes constructor(inline var data: UIntArray =
     }
 
     @ExperimentalUnsignedTypes
-    fun sample(x: Float, y: Float): Pixel {
+    fun sample(x: Float, y: Float): Pixel? {
         val sx = min((x * width).toInt(), width - 1)
         val sy = min((y * height).toInt(), height - 1)
         return getPixel(sx, sy)
@@ -113,10 +113,10 @@ class Sprite @ExperimentalUnsignedTypes constructor(inline var data: UIntArray =
         val uOpposite = 1 - uRatio
         val vOpposite = 1 - vRatio
 
-        val p1 = getPixel(max(x, 0), max(y, 0))
-        val p2 = getPixel(min(x + 1, width - 1), max(y, 0))
-        val p3 = getPixel(max(x, 0), min(y + 1, height - 1))
-        val p4 = getPixel(min(x + 1, width - 1), min(y + 1, height - 1))
+        val p1 = getPixel(max(x, 0), max(y, 0)) ?: Pixel.BLANK
+        val p2 = getPixel(min(x + 1, width - 1), max(y, 0)) ?: Pixel.BLANK
+        val p3 = getPixel(max(x, 0), min(y + 1, height - 1)) ?: Pixel.BLANK
+        val p4 = getPixel(min(x + 1, width - 1), min(y + 1, height - 1)) ?: Pixel.BLANK
 
         return Pixel(
             ((p1.rf * uOpposite + p2.rf * uRatio) * vOpposite + (p3.rf * uOpposite + p4.rf * uRatio) * vRatio).toUInt().toUByte(),

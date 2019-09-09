@@ -4,30 +4,45 @@ import olc.game_engine.Key
 import olc.game_engine.Pixel
 import olc.game_engine.PixelGameEngineImpl
 import olc.game_engine.rcode
-import kotlin.math.PI
-import kotlin.math.cos
-import kotlin.math.roundToInt
-import kotlin.math.sin
-
+import kotlin.math.*
+import kotlin.random.Random
+import kotlin.test.assertNotNull
 
 open class SpaceObject(
     var x: Float = 0.0f,
     var y: Float = 0.0f,
     var vx: Float = 0.0f,
     var vy: Float = 0.0f,
-    open var angle: Float = 0.0f,
-    val size: Int = 1
+    open var angle: Float = 0.0f
 ) {
+    var dead = false
     val yi: Int
         inline get() = y.roundToInt()
     val xi: Int
         inline get() = x.roundToInt()
+
+    fun accelerate(elapsedTime: Float) {
+        vx += sin(angle) * 20.0f * elapsedTime
+        vy += -cos(angle) * 20.0f * elapsedTime
+    }
 
     fun move(elapsedTime: Float) {
         x += vx * elapsedTime
         y += vy * elapsedTime
     }
 }
+
+@ExperimentalUnsignedTypes
+class Asteroid(
+    val letter: String,
+    val color: Pixel,
+    val scale: Int,
+    x: Float,
+    y: Float,
+    vx: Float,
+    vy: Float,
+    angle: Float = 0.0f
+) : SpaceObject(x, y, vx, vy, angle)
 
 class Ship : SpaceObject {
     constructor(shipModel: Triple<Pair<Float, Float>, Pair<Float, Float>, Pair<Float, Float>>) : super() {
@@ -37,38 +52,73 @@ class Ship : SpaceObject {
     operator fun get(i: Int) = translate(shipModel[i]).roundToInt()
 
     private var shipModel: List<Pair<Float, Float>>
+
     override var angle: Float = 0.0f
         set(newAngle) {
-            field = newAngle%(2*PI.toFloat())
-            rotate()
+            rotate(newAngle - field)
+            field = newAngle
         }
 
-    private fun rotate() {
+    private fun rotate(deltaAngle: Float) {
         shipModel = shipModel.map {
             Pair(
-                it.first*cos(angle) - it.second*sin(angle),
-                it.first*sin(angle) + it.second*cos(angle)
+                it.first * cos(deltaAngle) - it.second * sin(deltaAngle),
+                it.first * sin(deltaAngle) + it.second * cos(deltaAngle)
             )
         }
     }
 
     private fun translate(coord: Pair<Float, Float>) = Pair(coord.first + x, coord.second + y)
-
 }
 
 @ExperimentalUnsignedTypes
 class AsteroidsDemo : PixelGameEngineImpl() {
-    override fun onUserCreate(): Boolean {
+    override fun onUserCreate() = reset()
+
+    private fun reset(): Boolean {
+        bullets.clear()
+        asteroids.clear()
 
         player.x = getDrawTargetWidth() / 2f
         player.y = getDrawTargetHeight() / 2f
+        player.dead = false
+        player.vx = 0.0f; player.vy = 0.0f
+        player.angle = 0.0f
 
-        asteroids.add(SpaceObject(vx = 8.0f, vy = -10.0f, size = 8))
+        asteroids.add(
+            Asteroid(
+                "H",
+                letters["H"]!!,
+                8,
+                x = 0.0f,
+                y = 0.0f,
+                vx = Random.nextDouble(-10.0, 10.0).toFloat(),
+                vy = Random.nextDouble(-10.0, 10.0).toFloat()
+            )
+        )
+
+        this.score = "_________"
+
         return true
     }
 
     override fun onUserUpdate(elapsedTime: Float): Boolean {
-        clear(Pixel(0xFF4c4a41u)) // space color
+        clear(Pixel(spaceColor))
+
+        if (player.dead) {
+            val msg = "WASTED!"
+            drawString(
+                getDrawTargetWidth() / 2 - (msg.length * 8 * 4) / 2,
+                getDrawTargetHeight() / 2 - 8 * 2,
+                msg,
+                Pixel.DARK_RED,
+                scale = 4
+            )
+
+            if (getKey(Key.ENTER).bPressed) reset()
+
+            return true
+        }
 
         asteroids.forEach {
             // move
@@ -76,29 +126,146 @@ class AsteroidsDemo : PixelGameEngineImpl() {
             val (nx, ny) = wrapFloatCoordinates(Pair(it.x, it.y))
             it.x = nx; it.y = ny
             // draw
-            drawString(it.xi, it.yi, scale = it.size, text = "H", col = Pixel.YELLOW)
+            drawString(it.xi, it.yi, scale = it.scale, text = it.letter, col = it.color)
         }
 
         with(player) {
-            if (getKey(Key.SPACE).bPressed || getKey(Key.SPACE).bHeld) {
+            // player can shoot only 3 bullets
+            if (getKey(Key.SPACE).bPressed && bullets.size < 3) {
                 // shoot
+                bullets.add(
+                    SpaceObject(
+                        this.x,
+                        this.y,
+                        max(50.0f, this.vx * 10) * sin(this.angle),
+                        -max(50.0f, this.vy * 10) * cos(this.angle)
+                    )
+                )
             }
 
             if (getKey(Key.UP).bHeld) {
                 // thrust
+                this.accelerate(elapsedTime)
             }
 
             if (getKey(Key.LEFT).bPressed || getKey(Key.LEFT).bHeld) {
                 // rotate left
-                this.angle -= 1.0f * elapsedTime
+                this.angle -= 5.0f * elapsedTime
             }
 
             if (getKey(Key.RIGHT).bPressed || getKey(Key.RIGHT).bHeld) {
-                this.angle += 1.0f * elapsedTime
+                this.angle += 5.0f * elapsedTime
             }
 
+            this.move(elapsedTime)
+            val (nx, ny) = wrapFloatCoordinates(Pair(this.x, this.y))
+            this.x = nx; this.y = ny
+            // check collision
+            val loc = getDrawTarget().getPixel(this.xi, this.yi)?.n
+            // pixel in current location is not yet drawn.
+            // so it either equal to space color or we approximated to the same coordinates
+            if (loc != null && loc != spaceColor && loc != Pixel.WHITE.n) {
+                // hit detected
+                this.dead = true
+            }
             drawTriangle(this[0], this[1], this[2])
         }
+
+        bullets.forEach {
+            // first move
+            it.move(elapsedTime)
+            val (nx, ny) = wrapFloatCoordinates(Pair(it.x, it.y))
+            it.x = nx; it.y = ny
+            // check collision
+            val loc = getDrawTarget().getPixel(it.xi, it.yi)?.n
+            // pixel in current location is not yet drawn.
+            // so it either equal to space color or we approximated to the same coordinates
+            if (loc != null && loc != spaceColor && loc != Pixel.WHITE.n) {
+                // hit detected
+                it.dead = true // kill bullet
+
+                val angle1 = Random.nextDouble(2 * PI).toFloat()
+                val angle2 = Random.nextDouble(2 * PI).toFloat()
+                val reversedLetters = letters.entries.associate { (k, v) -> v to k }
+
+                val killAsteroid: (Pixel) -> Asteroid = { p: Pixel ->
+                    val tmp = asteroids.filter { asteroid ->
+                        asteroid.letter == reversedLetters[p]
+                    }.minBy { asteroid ->
+                        // center of the letter
+                        val center = Pair(asteroid.x + 4 * asteroid.scale, asteroid.y + 4 * asteroid.scale)
+                        // distance to the letter's center from current bullet
+                        sqrt((center.first - nx).pow(2) + (center.second - ny).pow(2))
+                    }
+                    assertNotNull(tmp)
+                    tmp.also { asteroid -> asteroid.dead = true }
+                }
+
+                val newAsteroid: (Asteroid, Float, Pixel) -> Asteroid = { a, angle, p ->
+                    Asteroid(
+                        reversedLetters[p]!!, // must exist
+                        letters[reversedLetters[p]!!]!!, // must exist
+                        a.scale - 1,
+                        a.x,
+                        a.y,
+                        a.vx * Random.nextDouble(1.1, 2.0).toFloat() * sin(angle),
+                        a.vy * Random.nextDouble(1.1, 2.0).toFloat() * cos(angle)
+                    )
+                }
+
+                val splitAsteroid: (Pixel, Pixel) -> Unit = { self, new ->
+                    val a = killAsteroid(self)
+                    asteroids.add(newAsteroid(a, angle1, new))
+                    asteroids.add(newAsteroid(a, angle2, new))
+                }
+
+                when (loc) {
+                    Pixel.YELLOW.n -> {// H letter hit split to two A
+                        splitAsteroid(Pixel.YELLOW, Pixel.GREEN)
+                        score = replaceCharAtIndex(score, 0, 'H')
+                    }
+                    Pixel.GREEN.n -> {
+                        splitAsteroid(Pixel.GREEN, Pixel.BLUE)
+                        score = replaceCharAtIndex(score, 1, 'A')
+                    }
+                    Pixel.BLUE.n -> {
+                        splitAsteroid(Pixel.BLUE, Pixel.CYAN)
+                        score = replaceCharAtIndex(score, 2, 'C')
+                    }
+                    Pixel.CYAN.n -> {
+                        splitAsteroid(Pixel.CYAN, Pixel.RED)
+                        score = replaceCharAtIndex(score, 3, 'K')
+                    }
+                    Pixel.RED.n -> {
+                        splitAsteroid(Pixel.RED, Pixel.MAGENTA)
+                        score = replaceCharAtIndex(score, 4, 'a')
+                    }
+                    Pixel.MAGENTA.n -> {
+                        splitAsteroid(Pixel.MAGENTA, Pixel.DARK_YELLOW)
+                        score = replaceCharAtIndex(score, 5, 't')
+                    }
+                    Pixel.DARK_YELLOW.n -> {
+                        splitAsteroid(Pixel.DARK_YELLOW, Pixel.DARK_CYAN)
+                        score = replaceCharAtIndex(score, 6, 'h')
+                    }
+                    Pixel.DARK_CYAN.n -> {
+                        splitAsteroid(Pixel.DARK_CYAN, Pixel.DARK_MAGENTA)
+                        score = replaceCharAtIndex(score, 7, 'o')
+                    }
+                    Pixel.DARK_MAGENTA.n -> {
+                        killAsteroid(Pixel.DARK_MAGENTA)
+                        score = replaceCharAtIndex(score, 8, 'n')
+                    }
+                }
+            }
+
+            draw(it.xi, it.yi)
+        }
+
+        bullets.removeAll { it.dead }
+        asteroids.removeAll { it.dead }
+        drawString(5, 5, "Score: $score")
+
         return true
     }
 
@@ -127,9 +294,32 @@ class AsteroidsDemo : PixelGameEngineImpl() {
         super.draw(nx, ny, p)
     }
 
-    private var asteroids: MutableList<SpaceObject> = mutableListOf()
+    private lateinit var score: String
+    private val bullets: MutableList<SpaceObject> = mutableListOf()
+    private var asteroids: MutableList<Asteroid> = mutableListOf()
     private val player = Ship(Triple(Pair(0.0f, -5.0f), Pair(-2.5f, +2.5f), Pair(+2.5f, +2.5f)))
+    private val letters = mapOf(
+        "H" to Pixel.YELLOW,
+        "A" to Pixel.GREEN,
+        "C" to Pixel.BLUE,
+        "K" to Pixel.CYAN,
+        "a" to Pixel.RED,
+        "t" to Pixel.MAGENTA,
+        "h" to Pixel.DARK_YELLOW,
+        "o" to Pixel.DARK_CYAN,
+        "n" to Pixel.DARK_MAGENTA
+    )
     override val appName = "Asteroids Demo"
+
+    companion object {
+        private const val spaceColor = 0xFF4c4a41u
+    }
+}
+
+fun replaceCharAtIndex(input: String, i: Int, c: Char): String {
+    val chars = input.toCharArray()
+    chars[i] = c
+    return String(chars)
 }
 
 fun Pair<Float, Float>.roundToInt() = Pair(this.first.roundToInt(), this.second.roundToInt())
