@@ -237,8 +237,8 @@ class AsteroidsDemo : PixelGameEngineImpl() {
                         a.scale - 1,
                         a.x,
                         a.y,
-                        a.vx * Random.nextDouble(1.1, 2.0).toFloat() * sin(angle),
-                        a.vy * Random.nextDouble(1.1, 2.0).toFloat() * cos(angle)
+                        Random.nextDouble(10.0, 20.0).toFloat() * sin(angle),
+                        Random.nextDouble(10.0, 20.0).toFloat() * cos(angle)
                     )
                 }
 
