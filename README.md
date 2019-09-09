@@ -19,6 +19,8 @@ Then do `gradle assemble` or `gradle runReleaseExecutableOlcGameEnginePort`
 
 Assemble will create executable in `build/bin` catalog. And second command will run sample app.
 
+You can switch git branches for different demos, like Asteroid game.
+
 # Disclaimer
 Performance is shit =) 
 
