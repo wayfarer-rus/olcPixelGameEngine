@@ -84,7 +84,7 @@ Patreon:	https://www.patreon.com/javidx9
 interface PixelGameEngine {
     val appName: String
 
-    fun construct(screen_w: Int, screen_h: Int, pixel_w: Int, pixel_h: Int, full_screen: Boolean = false): rcode
+    fun construct(screen_w: Int = 256, screen_h: Int = 192, pixel_w: Int = 3, pixel_h: Int = 4, full_screen: Boolean = false): rcode
     fun start(): rcode
 
     fun onUserCreate(): Boolean
@@ -650,7 +650,7 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
 
             if (fFrameTimer >= 1.0f) {
                 fFrameTimer -= 1.0f
-                val sTitle = "OneLoneCoder.com - Pixel Game Engine - $appName - FPS: $nFrameCount"
+                val sTitle = "$appName - FPS: $nFrameCount"
                 fps = nFrameCount
                 window.setTitle(sTitle)
                 nFrameCount = 0

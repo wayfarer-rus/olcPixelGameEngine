@@ -1,5 +1,5 @@
 plugins {
-    kotlin("multiplatform") version "1.3.30"
+    kotlin("multiplatform") version "1.3.31"
 }
 
 repositories {
@@ -44,7 +44,11 @@ kotlin {
 
     hostTarget.apply {
         binaries {
-            executable("olcGameEnginePort") {
+            executable("FireworksDemo") {
+                entryPoint = "demos.fireworks.main"
+                runTask?.args("")
+            }
+            executable("olcGameEnginePortSampleApp") {
                 entryPoint = "sample.main"
                 runTask?.args("")
             }
