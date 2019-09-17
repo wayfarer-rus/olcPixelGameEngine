@@ -84,7 +84,14 @@ Patreon:	https://www.patreon.com/javidx9
 interface PixelGameEngine {
     val appName: String
 
-    fun construct(screen_w: Int = 256, screen_h: Int = 192, pixel_w: Int = 3, pixel_h: Int = 4, full_screen: Boolean = false): rcode
+    fun construct(
+        screen_w: Int = 256,
+        screen_h: Int = 192,
+        pixel_w: Int = 4,
+        pixel_h: Int = 4,
+        full_screen: Boolean = false
+    ): rcode
+
     fun start(): rcode
 
     fun onUserCreate(): Boolean
@@ -257,19 +264,17 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
                 Pixel.Mode.NORMAL -> this.setPixel(x, y, p)
                 Pixel.Mode.MASK -> if (255.toUByte() == p.a) this.setPixel(x, y, p)
                 Pixel.Mode.ALPHA -> {
-                    val d = this.getPixel(x, y).let { d ->
+                    this.getPixel(x, y)?.let { d ->
                         val a = (p.af / 255.0f) * fBlendFactor
                         val c = 1.0f - a
                         val r = a * p.rf + c * d.rf
                         val g = a * p.gf + c * d.gf
                         val b = a * p.bf + c * d.bf
                         Pixel(r, g, b)
-                    }
-
-                    this.setPixel(x, y, d)
+                    }?.let { this.setPixel(x, y, it) }
                 }
                 Pixel.Mode.CUSTOM -> this.setPixel(
-                    x, y, funcPixelMode?.invoke(x, y, p, this.getPixel(x, y)) ?: Pixel(0u)
+                    x, y, this.getPixel(x, y)?.let { funcPixelMode?.invoke(x, y, p, it) } ?: Pixel(0u)
                 )
             }
         }
@@ -294,7 +299,7 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
                 if (scale > 1) {
                     for (i in 0 until 8)
                         for (j in 0 until 8)
-                            if (fontSprite.getPixel(i + ox * 8, j + oy * 8).r > 0.toUByte())
+                            if (fontSprite.getPixel(i + ox * 8, j + oy * 8)!!.r > 0.toUByte())
                                 for (`is` in 0 until scale)
                                     for (js in 0 until scale)
                                         draw(
@@ -305,7 +310,7 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
                 } else {
                     for (i in 0 until 8)
                         for (j in 0 until 8)
-                            if (fontSprite.getPixel(i + ox * 8, j + oy * 8).r > 0.toUByte())
+                            if (fontSprite.getPixel(i + ox * 8, j + oy * 8)!!.r > 0.toUByte())
                                 draw(x + sx + i, y + sy + j, col)
                 }
                 sx += 8 * scale
@@ -529,12 +534,12 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
                             draw(
                                 x + (i * scale) + `is`,
                                 y + (j * scale) + js,
-                                sprite.getPixel(i, j)
+                                sprite.getPixel(i, j)!!
                             )
         } else {
             for (i in 0 until sprite.width)
                 for (j in 0 until sprite.height)
-                    draw(x + i, y + j, sprite.getPixel(i, j))
+                    draw(x + i, y + j, sprite.getPixel(i, j)!!)
         }
     }
 
@@ -547,12 +552,12 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
                             draw(
                                 x + (i * scale) + `is`,
                                 y + (j * scale) + js,
-                                sprite.getPixel(i + ox, j + oy)
+                                sprite.getPixel(i + ox, j + oy)!!
                             )
         } else {
             for (i in 0 until w)
                 for (j in 0 until h)
-                    draw(x + i, y + j, sprite.getPixel(i + ox, j + oy))
+                    draw(x + i, y + j, sprite.getPixel(i + ox, j + oy)!!)
         }
     }
 
@@ -650,7 +655,7 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
 
             if (fFrameTimer >= 1.0f) {
                 fFrameTimer -= 1.0f
-                val sTitle = "$appName - FPS: $nFrameCount"
+                val sTitle = "OneLoneCoder.com - Pixel Game Engine - $appName - FPS: $nFrameCount"
                 fps = nFrameCount
                 window.setTitle(sTitle)
                 nFrameCount = 0
