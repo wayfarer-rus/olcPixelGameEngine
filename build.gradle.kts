@@ -48,6 +48,10 @@ kotlin {
                 entryPoint = "demos.fireworks.main"
                 runTask?.args("")
             }
+            executable("olcGameEnginePortSampleApp") {
+                entryPoint = "sample.main"
+                runTask?.args("")
+            }
         }
     }
 }
