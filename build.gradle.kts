@@ -53,7 +53,7 @@ kotlin {
                 runTask?.args("")
             }
             executable("AsteroidsDemo") {
-                entryPoint = "demo.asteroids.main"
+                entryPoint = "demos.asteroids.main"
                 runTask?.args("")
             }
         }

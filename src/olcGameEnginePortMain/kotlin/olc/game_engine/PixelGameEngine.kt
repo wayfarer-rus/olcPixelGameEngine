@@ -138,12 +138,6 @@ interface PixelGameEngine {
 abstract class PixelGameEngineImpl : PixelGameEngine {
     override val appName: String = "Undefined"
 
-    // shady init method
-    // why do we need that global object?
-    init {
-        PGEX.pge = this
-    }
-
     override fun construct(screen_w: Int, screen_h: Int, pixel_w: Int, pixel_h: Int, full_screen: Boolean): rcode {
         nScreenWidth = screen_w
         nScreenHeight = screen_h
@@ -629,17 +623,19 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
             glActiveTexture(GL_TEXTURE0)
             glBindTexture(GL_TEXTURE_2D, glBuffer)
 
-            glTexSubImage2D(
-                GL_TEXTURE_2D,
-                0,
-                0,
-                0,
-                nScreenWidth,
-                nScreenHeight,
-                GL_RGBA,
-                GL_UNSIGNED_BYTE,
-                pDrawTarget.data.toCValues()
-            )
+            pDrawTarget.data.usePinned {
+                glTexSubImage2D(
+                    GL_TEXTURE_2D,
+                    0,
+                    0,
+                    0,
+                    nScreenWidth,
+                    nScreenHeight,
+                    GL_RGBA,
+                    GL_UNSIGNED_BYTE,
+                    it.addressOf(0)
+                )
+            }
 
             glUniform1i(texID, 0)
             glBindVertexArray(vertexArrayID)
@@ -1142,12 +1138,4 @@ private operator fun <T> Array<T>.component8(): T {
 
 private operator fun <T> Array<T>.component9(): T {
     return get(8)
-}
-
-// by default this object is frozen
-// to change it, it must be @ThreadLocal
-@ThreadLocal
-object PGEX {
-    @ExperimentalUnsignedTypes
-    var pge: PixelGameEngineImpl? = null
 }

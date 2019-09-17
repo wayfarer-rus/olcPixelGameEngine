@@ -1,4 +1,4 @@
-package demo.asteroids
+package demos.asteroids
 
 import olc.game_engine.Key
 import olc.game_engine.Pixel

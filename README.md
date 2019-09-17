@@ -15,16 +15,25 @@ You have to have GLFW installed. Call `brew install glfw` on Mac; `apt install g
 
 Windows (at least in my experience) already have GLFW
 
-Then do `gradle assemble` or `gradle runReleaseExecutableOlcGameEnginePort`
+Then do `gradle assemble` or `gradle runOlcGameEnginePortSampleAppReleaseExecutableOlcGameEnginePort`
 
 Assemble will create executable in `build/bin` catalog. And second command will run sample app.
 
-You can switch git branches for different demos, like Asteroid game.
+Couple of demo apps also available and can be directly compiled and run from cmd:
+- Fireworks demo:
+    `gradle runFireworksDemoReleaseExecutableOlcGameEnginePort`
+- Asteroids demo:
+    `gradle runAsteroidsDemoReleaseExecutableOlcGameEnginePort`  
 
 # Disclaimer
-Performance is shit =) 
+~~Performance is shit =)~~ 
 
-I blame garbage collector for it. Probably will do profiling and optimization.
+~~I blame garbage collector for it. Probably will do profiling and optimization.~~
+
+I've made some optimizations with some help from Kotlin native team. 
+Now sample app runs with stable 80 fps after short worm-up.
+
+Will do an additional step after kgl updates to 1.3.50 version of kotlin-multiplatform.
 
 Port is not fully complete:
 - PNG sprite loading not yet ported
