@@ -44,12 +44,20 @@ kotlin {
 
     hostTarget.apply {
         binaries {
+            executable("olcGameEnginePortSampleApp") {
+                entryPoint = "sample.main"
+                runTask?.args("")
+            }
+            executable("FireworksDemo") {
+                entryPoint = "demos.fireworks.main"
+                runTask?.args("")
+            }
+            executable("AsteroidsDemo") {
+                entryPoint = "demo.asteroids.main"
+                runTask?.args("")
+            }
             executable("BreackoutDemo") {
                 entryPoint= "demos.breakout.main"
-                runTask
-            }
-            executable("PixelShooter") {
-                entryPoint = "game.pixel_shooter.main"
                 runTask
             }
         }
