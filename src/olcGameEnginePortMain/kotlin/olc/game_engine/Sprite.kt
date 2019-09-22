@@ -44,7 +44,7 @@ Homepage:	https://www.onelonecoder.com
 Patreon:	https://www.patreon.com/javidx9
  */
 
-class Sprite @ExperimentalUnsignedTypes constructor(inline var data: UIntArray = UIntArray(0)) {
+open class Sprite @ExperimentalUnsignedTypes constructor(inline var data: UIntArray = UIntArray(0)) {
     enum class Mode { NORMAL, PERIODIC }
 
     @ThreadLocal

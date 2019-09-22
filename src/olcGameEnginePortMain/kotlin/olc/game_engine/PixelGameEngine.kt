@@ -111,6 +111,7 @@ interface PixelGameEngine {
     fun getDrawTargetHeight(): Int
     fun getDrawTarget(): Sprite
     fun setDrawTarget(target: Sprite)
+    fun resetDrawTarget()
     fun setPixelMode(m: Pixel.Mode)
     // fun SetPixelMode(fun)
     fun getPixelMode(): Pixel.Mode
@@ -120,7 +121,7 @@ interface PixelGameEngine {
 
     fun draw(x: Int, y: Int, p: Pixel = Pixel.WHITE)
 
-    fun drawLine(start: Pair<Int, Int>, end: Pair<Int, Int>, p: Pixel, pattern: UInt = 0xFFFFFFFFu)
+    fun drawLine(start: Pair<Int, Int>, end: Pair<Int, Int>, p: Pixel = Pixel.WHITE, pattern: UInt = 0xFFFFFFFFu)
     fun drawCircle(x: Int, y: Int, radius: Int, p: Pixel = Pixel.WHITE, mask: UByte = 0xFFu)
     fun fillCircle(x: Int, y: Int, radius: Int, p: Pixel = Pixel.WHITE)
     fun drawRect(x: Int, y: Int, w: Int, h: Int, p: Pixel = Pixel.WHITE)
@@ -178,6 +179,10 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
     // Utility methods and flow control
     override fun setDrawTarget(target: Sprite) {
         pDrawTarget = target
+    }
+
+    override fun resetDrawTarget() {
+        pDrawTarget = pDefaultDrawTarget
     }
 
     override fun getFPS(): Int {
@@ -255,20 +260,20 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
     override fun draw(x: Int, y: Int, p: Pixel) {
         pDrawTarget.apply {
             when (nPixelMode) {
-                Pixel.Mode.NORMAL -> this.setPixel(x, y, p)
-                Pixel.Mode.MASK -> if (255.toUByte() == p.a) this.setPixel(x, y, p)
+                Pixel.Mode.NORMAL -> setPixel(x, y, p)
+                Pixel.Mode.MASK -> if (255.toUByte() == p.a) setPixel(x, y, p)
                 Pixel.Mode.ALPHA -> {
-                    this.getPixel(x, y)?.let { d ->
+                    getPixel(x, y)?.let { d ->
                         val a = (p.af / 255.0f) * fBlendFactor
                         val c = 1.0f - a
                         val r = a * p.rf + c * d.rf
                         val g = a * p.gf + c * d.gf
                         val b = a * p.bf + c * d.bf
                         Pixel(r, g, b)
-                    }?.let { this.setPixel(x, y, it) }
+                    }?.let { setPixel(x, y, it) }
                 }
                 Pixel.Mode.CUSTOM -> this.setPixel(
-                    x, y, this.getPixel(x, y)?.let { funcPixelMode?.invoke(x, y, p, it) } ?: Pixel(0u)
+                    x, y, getPixel(x, y)?.let { funcPixelMode?.invoke(x, y, p, it) } ?: Pixel(0u)
                 )
             }
         }
@@ -315,9 +320,7 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
     }
 
     override fun clear(p: Pixel) {
-        for (i in pDrawTarget.data.indices)
-            pDrawTarget.data[i] = p.n
-
+        pDrawTarget.data.fill(p.n)
         Sprite.nOverdrawCount += pDrawTarget.data.size
     }
 
@@ -452,6 +455,14 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
     }
 
     override fun fillRect(x: Int, y: Int, w: Int, h: Int, p: Pixel) {
+        val probeRange: (Int, Int, Int) -> Int = { value, begin, end ->
+            when {
+                value < begin -> begin
+                value >= end -> end
+                else -> value
+            }
+        }
+
         val x1 = probeRange(x, 0, nScreenWidth)
         val y1 = probeRange(y, 0, nScreenHeight)
         val x2 = probeRange(x + w, 0, nScreenWidth)
@@ -460,14 +471,6 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
         for (i in x1 until x2)
             for (j in y1 until y2)
                 draw(i, j, p)
-    }
-
-    private fun probeRange(x: Int, begin: Int, end: Int): Int {
-        return when {
-            x < begin -> begin
-            x >= end -> end
-            else -> x
-        }
     }
 
     override fun drawTriangle(point1: Pair<Int, Int>, point2: Pair<Int, Int>, point3: Pair<Int, Int>, p: Pixel) {
@@ -538,20 +541,46 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
     }
 
     override fun drawPartialSprite(x: Int, y: Int, sprite: Sprite, ox: Int, oy: Int, w: Int, h: Int, scale: Int) {
-        if (scale > 1) {
-            for (i in 0 until w)
-                for (j in 0 until h)
-                    for (`is` in 0 until scale)
-                        for (js in 0 until scale)
-                            draw(
-                                x + (i * scale) + `is`,
-                                y + (j * scale) + js,
-                                sprite.getPixel(i + ox, j + oy)!!
-                            )
+        if (nPixelMode == Pixel.Mode.NORMAL) {
+            // try to speed up things a bit ;)
+            if (scale > 1) {
+                TODO("not implemented")
+            } else {
+                for (j in 0 until h) {
+                    try { // safety first =)
+                        sprite.data.copyInto(
+                            pDrawTarget.data,
+                            (y + j) * pDrawTarget.width + x,
+                            (oy + j) * sprite.width + ox,
+                            (oy + j) * sprite.width + ox + w
+                        )
+                    } catch (err: ArrayIndexOutOfBoundsException) {
+                        println(err)
+                        println("------- $j -------")
+                        println("target length: ${pDrawTarget.data.size}")
+                        println("target offset: " + ((y + j) * pDrawTarget.width + x))
+                        println("source length: " + sprite.data.size)
+                        println("source start: " + ((oy + j) * sprite.width + ox))
+                        println("source end: " + ((oy + j) * sprite.width + ox + w))
+                    }
+                }
+            }
         } else {
-            for (i in 0 until w)
-                for (j in 0 until h)
-                    draw(x + i, y + j, sprite.getPixel(i + ox, j + oy)!!)
+            // some kind of blending enabled...
+            // performance will degrade
+            if (scale > 1) {
+                for (i in 0 until w)
+                    for (j in 0 until h)
+                        for (`is` in 0 until scale)
+                            for (js in 0 until scale)
+                                sprite.getPixel(i + ox, j + oy)?.let {
+                                    draw(x + (i * scale) + `is`, y + (j * scale) + js, it)
+                                }
+            } else {
+                for (i in 0 until w)
+                    for (j in 0 until h)
+                        sprite.getPixel(i + ox, j + oy)?.let { draw(x + i, y + j, it) }
+            }
         }
     }
 

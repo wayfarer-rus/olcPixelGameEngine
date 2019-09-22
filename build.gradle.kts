@@ -1,5 +1,5 @@
 plugins {
-    kotlin("multiplatform") version "1.3.31"
+    kotlin("multiplatform") version "1.3.50"
 }
 
 repositories {
@@ -26,8 +26,8 @@ kotlin {
             kotlin.srcDir("src")
             resources.srcDir("res")
             dependencies {
-                implementation("com.kgl:kgl-glfw:0.1.5")
-                implementation("com.kgl:kgl-opengl:0.1.5")
+                implementation("com.kgl:kgl-glfw:0.1.8-dev-1")
+                implementation("com.kgl:kgl-opengl:0.1.8-dev-1")
             }
         }
 
@@ -44,17 +44,9 @@ kotlin {
 
     hostTarget.apply {
         binaries {
-            executable("olcGameEnginePortSampleApp") {
-                entryPoint = "sample.main"
-                runTask?.args("")
-            }
-            executable("FireworksDemo") {
-                entryPoint = "demos.fireworks.main"
-                runTask?.args("")
-            }
-            executable("AsteroidsDemo") {
-                entryPoint = "demos.asteroids.main"
-                runTask?.args("")
+            executable("PixelShooter") {
+                entryPoint = "game.pixel_shooter.main"
+                runTask
             }
         }
     }

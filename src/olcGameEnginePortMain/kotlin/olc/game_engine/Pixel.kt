@@ -51,32 +51,32 @@ inline class Pixel(inline val n: UInt = 0xFF000000u) {
     constructor(red: Float, green: Float, blue: Float) :
             this(red.toInt(), green.toInt(), blue.toInt())
 
-    val rf: Float
+    inline val rf: Float
         inline get() = r.toFloat()
-    val gf: Float
+    inline val gf: Float
         inline get() = g.toFloat()
-    val bf: Float
+    inline val bf: Float
         inline get() = b.toFloat()
-    val af: Float
+    inline val af: Float
         inline get() = a.toFloat()
 
-    val r: UByte
+    inline val r: UByte
         inline get() {
             return (0x000000FFu and n).toUByte()
         }
-    val g: UByte
+    inline val g: UByte
         inline get() {
             return (0x0000FF00u and n shr 8).toUByte()
         }
-    val b: UByte
+    inline val b: UByte
         inline get() {
             return (0x00FF0000u and n shr 16).toUByte()
         }
-    val a: UByte
+    inline val a: UByte
         inline get() {
             return (0xFF000000u and n shr 24).toUByte()
         }
-    val ni: Int
+    inline val ni: Int
         inline get() {
             return n.toInt()
         }

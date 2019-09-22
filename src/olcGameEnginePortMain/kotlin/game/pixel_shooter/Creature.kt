@@ -1,0 +1,47 @@
+package game.pixel_shooter
+
+import olc.game_engine.PixelGameEngine
+import kotlin.math.cos
+import kotlin.math.pow
+import kotlin.math.sin
+import kotlin.math.sqrt
+
+abstract class Creature(
+    var pos: Pos<Float> = Pos(0f, 0f),
+    var velocityVector: Vector = Vector(0f, 0f),
+    var angle: Float = 0.0f,
+    var speed: Float = 1.0f
+) {
+    @ExperimentalUnsignedTypes
+    open fun drawSelf(gfx: PixelGameEngine, offsetPos: Pos<Float>) {}
+    @ExperimentalUnsignedTypes
+    open fun updateState(gfx: PixelGameEngine, world: Map, elapsedTime: Float) {}
+}
+
+class Vector(vx: Float, vy: Float) : Pos<Float>(vx, vy) {
+    constructor(point: Pos<Float>) : this(point.x, point.y)
+
+    fun rotate(a: Double) = Vector((vx * cos(a) - vy * sin(a)).toFloat(), (vx * sin(a) - vy * cos(a)).toFloat())
+
+    fun toPos(offset: Pos<Float>, length: Float): Pos<Float> {
+        if (mag() == 0.0f) return offset
+        val u = this * (length / mag())
+        return offset + u
+    }
+
+    operator fun times(value: Float) = Vector(this.x * value, this.y * value)
+
+    fun mag() = sqrt(vx.pow(2) + vy.pow(2))
+
+    override fun toString(): String {
+        return "Vector(${super.toString()})"
+    }
+
+    inline val vx: Float
+        inline get() = x
+    inline val vy: Float
+        inline get() = y
+}
+
+private operator fun Pos<Float>.plus(vector: Vector): Pos<Float> = Pos(this.x + vector.vx, this.y + vector.vy)
+private operator fun Pos<Int>.plus(vector: Vector): Pos<Float> = Pos(this.x + vector.vx, this.y + vector.vy)
