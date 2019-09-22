@@ -44,6 +44,10 @@ kotlin {
 
     hostTarget.apply {
         binaries {
+            executable("BreackoutDemo") {
+                entryPoint= "demos.breakout.main"
+                runTask
+            }
             executable("PixelShooter") {
                 entryPoint = "game.pixel_shooter.main"
                 runTask
