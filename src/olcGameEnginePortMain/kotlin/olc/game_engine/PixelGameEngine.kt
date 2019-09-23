@@ -131,7 +131,7 @@ interface PixelGameEngine {
     fun drawSprite(x: Int, y: Int, sprite: Sprite, scale: Int = 1)
     fun drawPartialSprite(x: Int, y: Int, sprite: Sprite, ox: Int, oy: Int, w: Int, h: Int, scale: Int = 1)
     fun drawString(x: Int, y: Int, text: String, col: Pixel = Pixel.WHITE, scale: Int = 1)
-    fun clear(p: Pixel)
+    fun clear(p: Pixel = Pixel.BLACK)
     fun getFPS(): Int
 }
 
