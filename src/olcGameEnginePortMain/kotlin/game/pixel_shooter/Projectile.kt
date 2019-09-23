@@ -25,8 +25,11 @@ class Projectile(
     }
 
     @ExperimentalUnsignedTypes
-    fun drawSelf(gfx: PixelGameEngine) {
-        gfx.drawLine(previousPos.roundToInt().p, pos.roundToInt().p, projectileColor)
+    fun drawSelf(gfx: PixelGameEngine, offsetPos: Pos<Float>) {
+        // position on screen
+        val previousScreenPos = (previousPos - offsetPos) * globalSpriteSize
+        val screenPos = (pos - offsetPos) * globalSpriteSize
+        gfx.drawLine(previousScreenPos.roundToInt().p, screenPos.roundToInt().p, projectileColor)
     }
 
     companion object {

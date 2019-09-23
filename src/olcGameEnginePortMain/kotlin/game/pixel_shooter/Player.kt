@@ -7,8 +7,12 @@ import kotlin.math.PI
 import kotlin.math.roundToInt
 import kotlin.random.Random
 
-class Player(pos: Pos<Float>, velocityVector: Vector = Vector(0f, 0f), angle: Float = 0f, speed: Float = 4.0f) :
-    Creature(pos, velocityVector, angle, speed) {
+class Player(
+    pos: Pos<Float>,
+    velocityVector: Vector = Vector(0f, 0f),
+    angle: Float = 0f,
+    speed: Float = 4.0f
+) : Creature(pos, velocityVector, angle, speed) {
 
     private var drawStep: Boolean = false
     private var fire: Boolean = false
@@ -26,32 +30,37 @@ class Player(pos: Pos<Float>, velocityVector: Vector = Vector(0f, 0f), angle: Fl
         aim: Pos<Int>
     ) {
         // position on screen
-        val x = (pos.x - offsetPos.x) * spriteSize
-        val y = (pos.y - offsetPos.y) * spriteSize
+        screenPos = toScreen(pos, offsetPos)
 
         projectiles.forEach {
-            it.drawSelf(gfx)
+            it.drawSelf(gfx, offsetPos)
         }
 
         gfx.fillRect(
-            (x - spriteSize / 2).roundToInt(),
-            (y - spriteSize / 2).roundToInt(), spriteSize, spriteSize, Pixel(0, 66, 255)
+            (screenPos.x - spriteSize / 2).roundToInt(),
+            (screenPos.y - spriteSize / 2).roundToInt(),
+            spriteSize, spriteSize, color
         )
         // velocity vector
         gfx.drawLine(
-            Pair(x.roundToInt(), y.roundToInt()),
-            velocityVector.toPos(Pos(x, y), spriteSize.toFloat()).roundToInt().p
+            Pair(screenPos.x.roundToInt(), screenPos.y.roundToInt()),
+            velocityVector.toPos(Pos(screenPos.x, screenPos.y), spriteSize.toFloat()).roundToInt().p
         )
 
         // hit(box)circle
-        gfx.drawCircle(x.roundToInt(), y.roundToInt(), spriteSize / 2)
+        gfx.drawCircle(screenPos.x.roundToInt(), screenPos.y.roundToInt(), spriteSize / 2)
 
         // effects
         if (fire) {
             fire = false
 
             projectiles.add(
-                Projectile(Pos(x, y), Vector(aim - Pos(x, y)), currentGun.projectileVelocity, world)
+                Projectile(
+                    pos,
+                    Vector(toWorld(aim.toFloat(), offsetPos) - pos),
+                    currentGun.projectileVelocity,
+                    world
+                )
             )
 
             val shellPos = pos * spriteSize
@@ -167,6 +176,8 @@ class Player(pos: Pos<Float>, velocityVector: Vector = Vector(0f, 0f), angle: Fl
     companion object {
         @ExperimentalUnsignedTypes
         private val stepColor = Pixel(80, 80, 80, 50)
+        @ExperimentalUnsignedTypes
+        private val color = Pixel(0, 66, 255)
         private const val spriteSize = globalSpriteSize
     }
 }

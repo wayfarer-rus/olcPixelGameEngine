@@ -10,12 +10,23 @@ abstract class Creature(
     var pos: Pos<Float> = Pos(0f, 0f),
     var velocityVector: Vector = Vector(0f, 0f),
     var angle: Float = 0.0f,
-    var speed: Float = 1.0f
+    var speed: Float = 1.0f,
+    var screenPos: Pos<Float> = Pos(0f, 0f)
 ) {
     @ExperimentalUnsignedTypes
     open fun drawSelf(gfx: PixelGameEngine, offsetPos: Pos<Float>) {}
     @ExperimentalUnsignedTypes
     open fun updateState(gfx: PixelGameEngine, world: Map, elapsedTime: Float) {}
+
+    protected fun toScreen(
+        pos: Pos<Float>,
+        offsetPos: Pos<Float>
+    ) = (pos - offsetPos) * globalSpriteSize
+
+    protected fun toWorld(
+        pos: Pos<Float>,
+        offsetPos: Pos<Float>
+    ) = (pos / globalSpriteSize + offsetPos)
 }
 
 class Vector(vx: Float, vy: Float) : Pos<Float>(vx, vy) {

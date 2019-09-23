@@ -4,7 +4,7 @@ import olc.game_engine.PixelGameEngineImpl
 import olc.game_engine.rcode
 import kotlin.math.roundToInt
 
-const val globalSpriteSize = 16
+const val globalSpriteSize = 8
 
 @ExperimentalUnsignedTypes
 class PixelShooterGame : PixelGameEngineImpl() {
@@ -12,6 +12,8 @@ class PixelShooterGame : PixelGameEngineImpl() {
 
     override fun onUserCreate(): Boolean {
         visibleTiles = Dimensions(screenWidth() / spriteSize, screenHeight() / spriteSize)
+        monsters = mutableListOf()
+        monsters.add(Zombie(player.pos - Pos(5f, 5f)))
 //        player.pos = Pos(1.0f, 1.0f)
         return true
     }
@@ -49,13 +51,22 @@ class PixelShooterGame : PixelGameEngineImpl() {
         drawPartialSprite(
             0, 0, map,
             (offsetPos.x * spriteSize).roundToInt(), (offsetPos.y * spriteSize).roundToInt(),
-            screenWidth(), screenHeight()
+            visibleTiles.w * spriteSize, visibleTiles.h * spriteSize
         )
 
         player.drawSelf(this, offsetPos, map, mouseCursorPos)
 
+        // draw monsters
+        monsters.forEach {
+            it.drawSelf(this, offsetPos)
+            drawLine(it.screenPos.roundToInt().p, player.screenPos.roundToInt().p)
+        }
+
         // draw aim
         fillCircle(mouseCursorPos.x, mouseCursorPos.y, 1)
+
+        // sraw some other stuff
+        drawString(1, 1, "o = $offsetPos\np = ${player.pos}\nps = ${player.screenPos}")
         return true
     }
 
@@ -65,13 +76,12 @@ class PixelShooterGame : PixelGameEngineImpl() {
 
     private val map = Map(48, 48) // in sprites. we can see only 16 sprites on screen
     private val player = Player(Pos(map.w / 2.0f, map.h / 2.0f), speed = 4.0f)
+    private lateinit var monsters: MutableList<Creature>
 
     companion object {
         const val spriteSize = globalSpriteSize
     }
 }
-
-
 
 inline class Dimensions(inline val p: Pair<Int, Int>) {
     inline val w: Int
@@ -85,5 +95,11 @@ inline class Dimensions(inline val p: Pair<Int, Int>) {
 @ExperimentalUnsignedTypes
 fun main() {
     val game = PixelShooterGame()
-    if (game.construct(screen_w = 256, screen_h = 192, pixel_w = 3, pixel_h = 3) == rcode.OK) game.start()
+    if (game.construct(
+            screen_w = (256 * 1.5).roundToInt(),
+            screen_h = (192 * 1.5).roundToInt(),
+            pixel_w = 3,
+            pixel_h = 3
+        ) == rcode.OK
+    ) game.start()
 }
