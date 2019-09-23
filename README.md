@@ -24,6 +24,8 @@ Couple of demo apps also available and can be directly compiled and run from cmd
     `gradle runFireworksDemoReleaseExecutableOlcGameEnginePort`
 - Asteroids demo:
     `gradle runAsteroidsDemoReleaseExecutableOlcGameEnginePort`  
+- Crude Breakout demo:
+    `gradle runFireworksDemoDebugExecutableOlcGameEnginePort`
 
 # Disclaimer
 ~~Performance is shit =)~~ 
@@ -33,7 +35,7 @@ Couple of demo apps also available and can be directly compiled and run from cmd
 I've made some optimizations with some help from Kotlin native team. 
 Now sample app runs with stable 80 fps after short worm-up.
 
-Will do an additional step after kgl updates to 1.3.50 version of kotlin-multiplatform.
+~~Will do an additional step after kgl updates to 1.3.50 version of kotlin-multiplatform.~~
 
 Port is not fully complete:
 - PNG sprite loading not yet ported

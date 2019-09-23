@@ -57,7 +57,12 @@ kotlin {
                 runTask?.args("")
             }
             executable("BreackoutDemo") {
-                entryPoint= "demos.breakout.main"
+                entryPoint = "demos.breakout.main"
+                runTask
+            }
+            // in progress
+            executable("PixelShooterGame") {
+                entryPoint = "game.pixel_shooter.main"
                 runTask
             }
         }
