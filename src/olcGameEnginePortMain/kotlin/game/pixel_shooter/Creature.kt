@@ -35,14 +35,15 @@ class Vector(vx: Float, vy: Float) : Pos<Float>(vx, vy) {
     fun rotate(a: Double) = Vector((vx * cos(a) - vy * sin(a)).toFloat(), (vx * sin(a) - vy * cos(a)).toFloat())
 
     fun toPos(offset: Pos<Float>, length: Float): Pos<Float> {
-        if (mag() == 0.0f) return offset
-        val u = this * (length / mag())
+        val m = mag()
+        if (m == 0.0f) return offset
+        val u = this * (length / m)
         return offset + u
     }
 
-    operator fun times(value: Float) = Vector(this.x * value, this.y * value)
+    private fun mag() = sqrt(vx.pow(2) + vy.pow(2))
 
-    fun mag() = sqrt(vx.pow(2) + vy.pow(2))
+    operator fun times(value: Float) = Vector(this.x * value, this.y * value)
 
     override fun toString(): String {
         return "Vector(${super.toString()})"
