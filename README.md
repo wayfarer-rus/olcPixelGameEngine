@@ -25,7 +25,9 @@ Couple of demo apps also available and can be directly compiled and run from cmd
 - Asteroids demo:
     `gradle runAsteroidsDemoReleaseExecutableOlcGameEnginePort`  
 - Crude Breakout demo:
-    `gradle runFireworksDemoDebugExecutableOlcGameEnginePort`
+    `gradle runFireworksDemoReleaseExecutableOlcGameEnginePort`
+- [Boids](https://en.wikipedia.org/wiki/Boids) demo:
+    `gradle runBoidsDemoReleaseExecutableOlcGameEnginePort`
 
 # Disclaimer
 ~~Performance is shit =)~~ 
