@@ -55,8 +55,8 @@ class BoidsDemo : PixelGameEngineImpl() {
 
                 val v = it.first.pos - current.pos
 
-                !areClockwise(current.blindZoneStart(), v) &&
-                        areClockwise(current.blindZoneEnd(), v)
+                !areClockwise(current.sightZoneStart(), v) &&
+                        areClockwise(current.sightZoneEnd(), v)
             }
 
             // for those that are too close we have to change direction - avoidance maneuver
@@ -141,12 +141,12 @@ class Boid(
 
     operator fun get(i: Int) = shape[i].roundToInt()
 
-    fun blindZoneEnd(): Point {
+    fun sightZoneEnd(): Point {
         val sectorStart = (velocityVector.angle() + (PI * 2 / 3)).toFloat()
         return Point.pointTo(sectorStart, visibilityRadius)
     }
 
-    fun blindZoneStart(): Point {
+    fun sightZoneStart(): Point {
         val sectorStart = (velocityVector.angle() - (PI * 2 / 3)).toFloat()
         return Point.pointTo(sectorStart, visibilityRadius)
     }
