@@ -3,9 +3,14 @@ package geometry_2d
 import kotlin.math.*
 
 data class Point(
-    val x: Float,
-    val y: Float
+    var x: Float,
+    var y: Float
 ) {
+    val xi: Int
+        get() = x.roundToInt()
+    val yi: Int
+        get() = y.roundToInt()
+
     constructor(x: Int, y: Int) : this(x.toFloat(), y.toFloat())
     constructor(v: Vector) : this(v[0], v[1])
 
@@ -36,6 +41,10 @@ data class Point(
             this * (length / m)
         else
             this
+    }
+
+    fun inBounds(topLeft: Point, bottomRight: Point): Boolean {
+        return (this.x > topLeft.x && this.x < bottomRight.x && this.y > topLeft.y && this.y < bottomRight.y)
     }
 
     companion object {

@@ -64,6 +64,14 @@ kotlin {
                 entryPoint = "demos.boids.main"
                 runTask
             }
+            executable("DestructibleBlockDemo") {
+                entryPoint = "demos.destructible_sprite.main"
+                runTask
+            }
+            executable("BallsDemo") {
+                entryPoint = "demos.balls.main"
+                runTask
+            }
             // in progress
             executable("PixelShooterGame") {
                 entryPoint = "game.pixel_shooter.main"
