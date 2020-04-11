@@ -5,6 +5,7 @@ import cglfw.GLFW_CURSOR_HIDDEN
 import cglfw.GLFW_STICKY_KEYS
 import cglfw.glfwSetInputMode
 import com.kgl.glfw.*
+import com.kgl.glfw.Glfw.pollEvents
 import com.kgl.opengl.*
 import copengl.GLuint
 import copengl.GLuintVar
@@ -777,7 +778,7 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
         }
 
         // Initialization complete. Print OpenGL version and update the viewport values
-        println(glGetString(GL_VERSION)!!.reinterpret<ByteVar>().toKString())
+        println(glGetString(GL_VERSION))
         olcUpdateViewport()
 
         println("olc_WindowCreate() return")
@@ -1146,7 +1147,7 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
             KeyboardKey.KP_ENTER to Key.ENTER.ordinal
         )
     private val mouseKeysMap =
-        mapOf(MouseButton.LEFT to 1, MouseButton.RIGHT to 2, MouseButton.MIDDLE to 3, MouseButton.LAST to 4)
+        mapOf(MouseButton.LEFT to 1, MouseButton.RIGHT to 2, MouseButton.MIDDLE to 3)
 
     companion object {
         var bAtomActive: AtomicInt = AtomicInt(0)

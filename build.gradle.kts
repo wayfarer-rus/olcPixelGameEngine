@@ -1,13 +1,16 @@
 plugins {
-    kotlin("multiplatform") version "1.3.50"
+    kotlin("multiplatform") version "1.3.71"
 }
 
 repositories {
     mavenCentral()
+    jcenter()
     maven {
         url = uri("https://dl.bintray.com/dominaezzz/kotlin-native")
     }
 }
+
+val mingwPath = File(System.getenv("MINGW64_DIR") ?: "C:/msys64/mingw64")
 
 kotlin {
     // Determine host preset.
@@ -23,17 +26,30 @@ kotlin {
 
     sourceSets {
         val nativeMain by creating {
-            kotlin.srcDir("src")
-            resources.srcDir("res")
             dependencies {
-                implementation("com.kgl:kgl-glfw:0.1.8-dev-1")
-                implementation("com.kgl:kgl-opengl:0.1.8-dev-1")
+                implementation("com.kgl:kgl-glfw:0.1.9-dev-8")
+                implementation("com.kgl:kgl-opengl:0.1.9-dev-8")
             }
         }
 
-        hostTarget.compilations.all {
-            defaultSourceSet {
-                dependsOn(nativeMain)
+        hostTarget.apply {
+            compilations["main"].cinterops {
+                val libglfw3 by creating {
+                    when (preset) {
+                        presets["macosX64"] -> includeDirs.headerFilterOnly("/opt/local/include", "/usr/local/include")
+                        presets["linuxX64"] -> includeDirs.headerFilterOnly(
+                            "/usr/include",
+                            "/usr/include/x86_64-linux-gnu"
+                        )
+                        presets["mingwX64"] -> includeDirs.headerFilterOnly(mingwPath.resolve("include"))
+                    }
+                }
+            }
+
+            compilations.all {
+                defaultSourceSet {
+                    dependsOn(nativeMain)
+                }
             }
         }
 
