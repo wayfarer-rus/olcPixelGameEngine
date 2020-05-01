@@ -13,9 +13,17 @@ You have to have gradle tool installed.
 
 You have to have GLFW installed. Call `brew install glfw` on Mac; `apt install glfw` on Ubuntu
 
-Windows (at least in my experience) already have GLFW
+## Install GLFW on Windows
+Download and install [msys2](https://www.msys2.org/)
 
-Then do `gradle assemble` or `gradle runOlcGameEnginePortSampleAppReleaseExecutableOlcGameEnginePort`
+Run `msys` and install `glfw3` for `mingw64`
+
+You want to have `c:\msys64\mingw64\bin` in your `PATH`, but I stumbled upon an issue.
+When I added it directly into Windows Environment, linking of the project started to fail.
+So, I tried to add it in project configuration, like `Path=c:\msys64\mingw64\bin\\;%Path%` and it works like that. 
+
+## Assemble and Run
+Just do `gradle assemble` or `gradle runOlcGameEnginePortSampleAppReleaseExecutableOlcGameEnginePort`
 
 Assemble will create executable in `build/bin` catalog. And second command will run sample app.
 
