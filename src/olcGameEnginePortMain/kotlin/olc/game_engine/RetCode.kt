@@ -38,7 +38,7 @@ Homepage:	https://www.onelonecoder.com
 Patreon:	https://www.patreon.com/javidx9
  */
 
-enum class rcode(val c: Int) {
+enum class RetCode(val c: Int) {
     FAIL(0),
     OK(1),
     NO_FILE(-1)

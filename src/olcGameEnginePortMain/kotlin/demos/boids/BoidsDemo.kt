@@ -4,7 +4,7 @@ import geometry_2d.Point
 import geometry_2d.Shape
 import olc.game_engine.Pixel
 import olc.game_engine.PixelGameEngineImpl
-import olc.game_engine.rcode
+import olc.game_engine.RetCode
 import kotlin.math.PI
 import kotlin.random.Random
 
@@ -169,5 +169,5 @@ class Boid(
 @ExperimentalUnsignedTypes
 fun main() {
     val demo = BoidsDemo()
-    if (demo.construct() == rcode.OK) demo.start()
+    if (demo.construct() == RetCode.OK) demo.start()
 }

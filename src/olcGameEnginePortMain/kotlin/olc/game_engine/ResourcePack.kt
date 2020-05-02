@@ -42,10 +42,10 @@ Patreon:	https://www.patreon.com/javidx9
  */
 
 interface ResourcePack {
-    fun AddToPack(file: String): rcode
-    fun SavePack(file: String): rcode
-    fun LoadPack(file: String): rcode
-    fun ClearPack(file: String): rcode
+    fun AddToPack(file: String): RetCode
+    fun SavePack(file: String): RetCode
+    fun LoadPack(file: String): RetCode
+    fun ClearPack(file: String): RetCode
     fun GetStreamBuffer(file: String): ByteArray?
 }
 
@@ -57,8 +57,8 @@ class ResourcePackImpl : ResourcePack {
     }
 
     @ExperimentalUnsignedTypes
-    override fun AddToPack(file: String): rcode {
-        val fh = fopen(file, "r") ?: return rcode.FAIL
+    override fun AddToPack(file: String): RetCode {
+        val fh = fopen(file, "r") ?: return RetCode.FAIL
 
         try {
             mapFiles[file] = fh.fileToByteArray()
@@ -66,20 +66,20 @@ class ResourcePackImpl : ResourcePack {
             fclose(fh)
         }
 
-        return rcode.OK
+        return RetCode.OK
     }
 
-    override fun SavePack(file: String): rcode {
+    override fun SavePack(file: String): RetCode {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun LoadPack(file: String): rcode {
+    override fun LoadPack(file: String): RetCode {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun ClearPack(file: String): rcode {
+    override fun ClearPack(file: String): RetCode {
         mapFiles.clear()
-        return rcode.OK
+        return RetCode.OK
     }
 
 }

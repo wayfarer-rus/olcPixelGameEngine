@@ -91,9 +91,9 @@ interface PixelGameEngine {
         pixel_w: Int = 4,
         pixel_h: Int = 4,
         full_screen: Boolean = false
-    ): rcode
+    ): RetCode
 
-    fun start(): rcode
+    fun start(): RetCode
 
     fun onUserCreate(): Boolean
     fun onUserUpdate(elapsedTime: Float): Boolean
@@ -140,7 +140,7 @@ interface PixelGameEngine {
 abstract class PixelGameEngineImpl : PixelGameEngine {
     override val appName: String = "Undefined"
 
-    override fun construct(screen_w: Int, screen_h: Int, pixel_w: Int, pixel_h: Int, full_screen: Boolean): rcode {
+    override fun construct(screen_w: Int, screen_h: Int, pixel_w: Int, pixel_h: Int, full_screen: Boolean): RetCode {
         nScreenWidth = screen_w
         nScreenHeight = screen_h
         nPixelWidth = pixel_w
@@ -150,19 +150,19 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
         fPixelY = 2.0f / nScreenHeight.toFloat()
 
         if (nPixelWidth <= 0 || nPixelHeight <= 0 || nScreenWidth <= 0 || nScreenHeight <= 0)
-            return rcode.FAIL
+            return RetCode.FAIL
 
         olcConstructFontsheet()
         pDefaultDrawTarget = Sprite(nScreenWidth, nScreenHeight)
         setDrawTarget(pDefaultDrawTarget)
-        return rcode.OK
+        return RetCode.OK
     }
 
-    override fun start(): rcode {
+    override fun start(): RetCode {
         println("Start called")
         Glfw.init()
 
-        if (!olcWindowCreate()) return rcode.FAIL
+        if (!olcWindowCreate()) return RetCode.FAIL
 
         olcOpenGlCreate()
 
@@ -174,7 +174,7 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
         window.close()
         Glfw.terminate()
         stableRefList.forEach { it.dispose() }
-        return rcode.OK
+        return RetCode.OK
     }
 
     // Utility methods and flow control

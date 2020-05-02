@@ -3,7 +3,7 @@ package demos.fireworks
 import olc.game_engine.Key
 import olc.game_engine.Pixel
 import olc.game_engine.PixelGameEngineImpl
-import olc.game_engine.rcode
+import olc.game_engine.RetCode
 import kotlin.math.*
 import kotlin.random.Random
 
@@ -134,6 +134,6 @@ class FireworksDemo : PixelGameEngineImpl() {
 fun main() {
     val demo = FireworksDemo()
 
-    if (demo.construct() == rcode.OK)
+    if (demo.construct() == RetCode.OK)
         demo.start()
 }

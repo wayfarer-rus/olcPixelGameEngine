@@ -125,18 +125,18 @@ open class Sprite @ExperimentalUnsignedTypes constructor(inline var data: UIntAr
         )
     }
 
-    fun loadFromFile(imageFile: String, pack: ResourcePack? = null): rcode {
+    fun loadFromFile(imageFile: String, pack: ResourcePack? = null): RetCode {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
     @ExperimentalUnsignedTypes
-    fun loadFromPGESprFile(imageFile: String, pack: ResourcePack? = null): rcode {
-        val readData: (buffer: ByteArray) -> rcode = { buffer ->
+    fun loadFromPGESprFile(imageFile: String, pack: ResourcePack? = null): RetCode {
+        val readData: (buffer: ByteArray) -> RetCode = { buffer ->
             println("size: " + buffer.size)
 
             if (buffer.size < 12) {
                 println("Failed because minimal size for file isn't met")
-                rcode.FAIL
+                RetCode.FAIL
             } else {
                 width = buffer.sliceArray(0..3).toInt()
                 height = buffer.sliceArray(4..7).toInt()
@@ -144,7 +144,7 @@ open class Sprite @ExperimentalUnsignedTypes constructor(inline var data: UIntAr
 
                 if (width <= 0 || height <= 0 || (width * height * UInt.SIZE_BYTES) > (buffer.size - Int.SIZE_BYTES * 2)) {
                     println("Failed because of the inconsistent file size")
-                    rcode.FAIL
+                    RetCode.FAIL
                 } else {
                     data = buffer.slice(8 until buffer.size).take(width * height * UInt.SIZE_BYTES)
                         .map { it.toUByte() }
@@ -153,26 +153,26 @@ open class Sprite @ExperimentalUnsignedTypes constructor(inline var data: UIntAr
                             Pixel(r, g, b, a).n
                         }.toUIntArray()
 
-                    rcode.OK
+                    RetCode.OK
                 }
             }
         }
 
         return if (pack == null) {
-            val fh: CPointer<FILE> = fopen(imageFile, "r") ?: return rcode.FAIL
+            val fh: CPointer<FILE> = fopen(imageFile, "r") ?: return RetCode.FAIL
             try {
                 readData(fh.fileToByteArray())
             } finally {
                 fclose(fh)
             }
         } else {
-            pack.GetStreamBuffer(imageFile)?.let { readData(it) } ?: rcode.FAIL
+            pack.GetStreamBuffer(imageFile)?.let { readData(it) } ?: RetCode.FAIL
         }
     }
 
     @ExperimentalUnsignedTypes
-    fun saveToPGESprFile(imageFile: String): rcode {
-        val file: CPointer<FILE>? = fopen(imageFile, "w") ?: return rcode.FAIL
+    fun saveToPGESprFile(imageFile: String): RetCode {
+        val file: CPointer<FILE>? = fopen(imageFile, "w") ?: return RetCode.FAIL
 
         try {
             fwrite(intArrayOf(width, height).refTo(0), (Int.SIZE_BYTES * 2).toULong(), 1, file)
@@ -182,7 +182,7 @@ open class Sprite @ExperimentalUnsignedTypes constructor(inline var data: UIntAr
             fclose(file)
         }
 
-        return rcode.OK
+        return RetCode.OK
     }
 
     var width = 0

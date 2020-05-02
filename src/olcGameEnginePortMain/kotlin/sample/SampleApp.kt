@@ -3,7 +3,7 @@ package sample
 import olc.game_engine.Key
 import olc.game_engine.Pixel
 import olc.game_engine.PixelGameEngineImpl
-import olc.game_engine.rcode
+import olc.game_engine.RetCode
 import platform.posix.rand
 
 @ExperimentalUnsignedTypes
@@ -38,6 +38,6 @@ class Example : PixelGameEngineImpl() {
 @ExperimentalUnsignedTypes
 fun main(args: Array<String>) {
     val demo = Example()
-    if (demo.construct(256, 200, 4, 4) == rcode.OK)
+    if (demo.construct(256, 200, 4, 4) == RetCode.OK)
         demo.start()
 }

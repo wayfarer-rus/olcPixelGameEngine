@@ -3,7 +3,7 @@ package demos.breakout
 import olc.game_engine.Key
 import olc.game_engine.Pixel
 import olc.game_engine.PixelGameEngineImpl
-import olc.game_engine.rcode
+import olc.game_engine.RetCode
 import kotlin.math.*
 import kotlin.random.Random
 
@@ -78,7 +78,7 @@ class BreakoutDemo : PixelGameEngineImpl() {
                         ((ballPos.y - ballR) in it.pos.y..(it.pos.y + Block.height) ||
                                 (ballPos.y + ballR) in it.pos.y..(it.pos.y + Block.height))
             }?.let {
-                it.active = false; level.remove(it);
+                it.active = false; level.remove(it)
 
                 if (ballPos.y > it.pos.y + Block.height || ballPos.y < it.pos.y) {
                     ballVec *= -1
@@ -131,5 +131,5 @@ class Pos(var x: Float = 0f, var y: Float = 0f)
 @ExperimentalUnsignedTypes
 fun main() {
     val demo = BreakoutDemo()
-    if (demo.construct() == rcode.OK) demo.start()
+    if (demo.construct() == RetCode.OK) demo.start()
 }

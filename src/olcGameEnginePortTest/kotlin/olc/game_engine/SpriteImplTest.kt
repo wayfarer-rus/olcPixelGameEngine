@@ -32,7 +32,7 @@ class SpriteImplTest {
         val sprite = Sprite()
         val res =
             sprite.loadFromPGESprFile("src/olcGameEnginePortTest/resources/SeditSlimeTransparent.spr", null)
-        assertEquals(rcode.OK, res)
+        assertEquals(RetCode.OK, res)
     }
 
     @Test
@@ -40,9 +40,9 @@ class SpriteImplTest {
         val sprite = Sprite()
         var res =
             sprite.loadFromPGESprFile("src/olcGameEnginePortTest/resources/SeditSlimeTransparent.spr", null)
-        assertEquals(rcode.OK, res)
+        assertEquals(RetCode.OK, res)
 
         res = sprite.saveToPGESprFile("src/olcGameEnginePortTest/resources/tmp_copy.spr")
-        assertEquals(rcode.OK, res)
+        assertEquals(RetCode.OK, res)
     }
 }

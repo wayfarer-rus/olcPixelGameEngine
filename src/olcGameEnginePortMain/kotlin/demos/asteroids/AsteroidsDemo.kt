@@ -3,7 +3,7 @@ package demos.asteroids
 import olc.game_engine.Key
 import olc.game_engine.Pixel
 import olc.game_engine.PixelGameEngineImpl
-import olc.game_engine.rcode
+import olc.game_engine.RetCode
 import kotlin.math.*
 import kotlin.random.Random
 import kotlin.test.assertNotNull
@@ -361,6 +361,6 @@ fun Pair<Float, Float>.roundToInt() = Pair(this.first.roundToInt(), this.second.
 @ExperimentalUnsignedTypes
 fun main() {
     val demo = AsteroidsDemo()
-    if (demo.construct() == rcode.OK)
+    if (demo.construct() == RetCode.OK)
         demo.start()
 }

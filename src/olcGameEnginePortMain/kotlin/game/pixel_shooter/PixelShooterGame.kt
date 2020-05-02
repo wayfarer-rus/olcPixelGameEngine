@@ -1,7 +1,7 @@
 package game.pixel_shooter
 
 import olc.game_engine.PixelGameEngineImpl
-import olc.game_engine.rcode
+import olc.game_engine.RetCode
 import kotlin.math.roundToInt
 
 const val globalSpriteSize = 8
@@ -100,6 +100,6 @@ fun main() {
             screen_h = (192 * 1.5).roundToInt(),
             pixel_w = 3,
             pixel_h = 3
-        ) == rcode.OK
+        ) == RetCode.OK
     ) game.start()
 }

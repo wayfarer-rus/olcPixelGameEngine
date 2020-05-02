@@ -3,7 +3,7 @@ package demos.balls
 import geometry_2d.Point
 import olc.game_engine.Key
 import olc.game_engine.PixelGameEngineImpl
-import olc.game_engine.rcode
+import olc.game_engine.RetCode
 import kotlin.math.pow
 
 @ExperimentalUnsignedTypes
@@ -131,5 +131,5 @@ class Body(val w: Int, val h: Int, val mass: Int, radius: Int) {
 @ExperimentalUnsignedTypes
 fun main() {
     val demo = BallsDemo()
-    if (demo.construct() == rcode.OK) demo.start()
+    if (demo.construct() == RetCode.OK) demo.start()
 }

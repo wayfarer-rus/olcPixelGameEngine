@@ -121,5 +121,5 @@ class Bullet(
 fun main() {
     val demo = DestructibleSprite()
 
-    if (demo.construct(32, 32, 24, 24) == rcode.OK) demo.start()
+    if (demo.construct(32, 32, 24, 24) == RetCode.OK) demo.start()
 }
