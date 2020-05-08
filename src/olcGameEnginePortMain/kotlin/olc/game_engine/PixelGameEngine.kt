@@ -5,43 +5,13 @@ import cglfw.GLFW_CURSOR_HIDDEN
 import cglfw.GLFW_STICKY_KEYS
 import cglfw.glfwSetInputMode
 import com.kgl.glfw.*
-import com.kgl.glfw.Glfw.pollEvents
 import com.kgl.opengl.*
 import copengl.GLuint
 import copengl.GLuintVar
 import kotlinx.cinterop.*
 import kotlin.math.abs
 import kotlin.math.roundToInt
-import kotlin.native.concurrent.AtomicInt
 import kotlin.system.getTimeNanos
-
-// Shaders for texture mapping. Work in conjunction with 'vertexBufferData' in EngineThread
-// language=glsl
-const val vertexShaderSource = """
-#version 330 core
-layout (location = 0) in vec4 vertex; // <vec2 position, vec2 texCoords>
-
-out vec2 TexCoords;
-
-void main()
-{
-    TexCoords = vertex.zw;
-    gl_Position = vec4(vertex.xy, 0.0, 1.0);
-}
-"""
-// language=glsl
-const val fragmentShaderSource = """
-#version 330 core
-in vec2 TexCoords;
-out vec4 color;
-
-uniform sampler2D renderedTexture;
-
-void main()
-{    
-    color = texture(renderedTexture, TexCoords);
-}     
-"""
 
 /**
 
@@ -90,7 +60,8 @@ interface PixelGameEngine {
         screen_h: Int = 192,
         pixel_w: Int = 4,
         pixel_h: Int = 4,
-        full_screen: Boolean = false
+        full_screen: Boolean = false,
+        v_sync: Boolean = false
     ): RetCode
 
     fun start(): RetCode
@@ -111,9 +82,11 @@ interface PixelGameEngine {
     fun getDrawTargetWidth(): Int
     fun getDrawTargetHeight(): Int
     fun getDrawTarget(): Sprite
-    fun setDrawTarget(target: Sprite)
+    fun setDrawTarget(target: Sprite?)
+    fun setDrawTarget(layer: Int)
     fun resetDrawTarget()
     fun setPixelMode(m: Pixel.Mode)
+
     // fun SetPixelMode(fun)
     fun getPixelMode(): Pixel.Mode
 
@@ -131,55 +104,141 @@ interface PixelGameEngine {
     fun fillTriangle(point1: Pair<Int, Int>, point2: Pair<Int, Int>, point3: Pair<Int, Int>, p: Pixel = Pixel.WHITE)
     fun drawSprite(x: Int, y: Int, sprite: Sprite, scale: Int = 1)
     fun drawPartialSprite(x: Int, y: Int, sprite: Sprite, ox: Int, oy: Int, w: Int, h: Int, scale: Int = 1)
+
+    // Draws a whole decal, with optional scale and tinting
+    fun drawDecal(pos: Vf2d, decal: Decal, scale: Vf2d = Vf2d(1.0f, 1.0f), tint: Pixel = Pixel.WHITE)
+
+    // Draws a region of a decal, with optional scale and tinting
+    fun drawPartialDecal(
+        pos: Vf2d,
+        decal: Decal,
+        source_pos: Vf2d,
+        source_size: Vf2d,
+        scale: Vf2d = Vf2d(1.0f, 1.0f),
+        tint: Pixel = Pixel.WHITE
+    )
+
+    fun drawWarpedDecal(decal: Decal, pos: Array<Vf2d>, tint: Pixel = Pixel.WHITE)
+    fun drawWarpedDecal(decal: Decal, pos: List<Vf2d>, tint: Pixel = Pixel.WHITE)
+    fun drawWarpedDecal(decal: Decal, pos: Vf2d, tint: Pixel = Pixel.WHITE)
+
+    fun drawRotatedDecal(
+        pos: Vf2d,
+        decal: Decal,
+        angle: Float,
+        center: Vf2d = Vf2d(0.0f, 0.0f),
+        scale: Vf2d = Vf2d(1.0f, 1.0f),
+        tint: Pixel = Pixel.WHITE
+    )
+
+    fun drawStringDecal(pos: Vf2d, text: String, col: Pixel = Pixel.WHITE, scale: Vf2d = Vf2d(1.0f, 1.0f))
+    fun drawPartialRotatedDecal(
+        pos: Vf2d,
+        decal: Decal,
+        angle: Float,
+        center: Vf2d,
+        source_pos: Vf2d,
+        source_size: Vf2d,
+        scale: Vf2d = Vf2d(1.0f, 1.0f),
+        tint: Pixel = Pixel.WHITE
+    )
+
+    fun drawPartialWarpedDecal(
+        decal: Decal,
+        pos: Array<Vf2d>,
+        source_pos: Vf2d,
+        source_size: Vf2d,
+        tint: Pixel = Pixel.WHITE
+    )
+
+    fun drawPartialWarpedDecal(decal: Decal, pos: Vf2d, source_pos: Vf2d, source_size: Vf2d, tint: Pixel = Pixel.WHITE)
+    fun drawPartialWarpedDecal(
+        decal: Decal,
+        pos: List<Vf2d>,
+        source_pos: Vf2d,
+        source_size: Vf2d,
+        tint: Pixel = Pixel.WHITE
+    )
+
+    // Draws a single line of text
     fun drawString(x: Int, y: Int, text: String, col: Pixel = Pixel.WHITE, scale: Int = 1)
+    fun drawString(pos: Vi2d, text: String, col: Pixel = Pixel.WHITE, scale: Int = 1)
+
     fun clear(p: Pixel = Pixel.BLACK)
     fun getFPS(): Int
+
+    fun createDecal(sprite: Sprite): Decal
+    fun updateDecal(decal: Decal): Decal
+    fun deleteDecal(decal: Decal)
+
+    fun createLayer(): Int
 }
 
 @ExperimentalUnsignedTypes
 abstract class PixelGameEngineImpl : PixelGameEngine {
+    // currently there is only GLFW platform and renderer
+    // when I add another one, I will think about configuratoin option
+    private val renderer: Renderer = RendererGlfwImpl()
+    private val platform: Platform = PlatformGlfwImpl(this, renderer)
+
     override val appName: String = "Undefined"
 
-    override fun construct(screen_w: Int, screen_h: Int, pixel_w: Int, pixel_h: Int, full_screen: Boolean): RetCode {
-        nScreenWidth = screen_w
-        nScreenHeight = screen_h
-        nPixelWidth = pixel_w
-        nPixelHeight = pixel_h
-        bFullScreen = full_screen
+    override fun construct(
+        screen_w: Int,
+        screen_h: Int,
+        pixel_w: Int,
+        pixel_h: Int,
+        full_screen: Boolean,
+        v_sync: Boolean
+    ): RetCode {
+        println("pge::construct called")
+        screenSize = Vi2d(screen_w, screen_h)
+        vInvScreenSize = Vf2d(1.0f / screen_w.toFloat(), 1.0f / screen_h.toFloat())
+        pixelSize = Vi2d(pixel_w, pixel_h)
+        windowSize = screenSize * pixelSize
+        fullScreen = full_screen
+        enableVsync = v_sync
+
         fPixelX = 2.0f / nScreenWidth.toFloat()
         fPixelY = 2.0f / nScreenHeight.toFloat()
 
         if (nPixelWidth <= 0 || nPixelHeight <= 0 || nScreenWidth <= 0 || nScreenHeight <= 0)
             return RetCode.FAIL
 
-        olcConstructFontsheet()
-        pDefaultDrawTarget = Sprite(nScreenWidth, nScreenHeight)
-        setDrawTarget(pDefaultDrawTarget)
         return RetCode.OK
     }
 
     override fun start(): RetCode {
-        println("Start called")
-        Glfw.init()
+        println("pge::start called")
+        if (platform.applicationStartUp() != RetCode.OK) return RetCode.FAIL
 
-        if (!olcWindowCreate()) return RetCode.FAIL
+        println("Construct window")
+        if (platform.createWindowPane(Vi2d(30, 30), this.windowSize, fullScreen) != RetCode.OK)
+            return RetCode.FAIL
 
-        olcOpenGlCreate()
+        platform.startSystemEventLoop()
 
-        if (onUserCreate()) {
-            bAtomActive.value = 1
-            engineMainLoop()
-        }
+        engineMainLoop()
 
-        window.close()
-        Glfw.terminate()
-        stableRefList.forEach { it.dispose() }
-        return RetCode.OK
+        return platform.applicationCleanUp()
     }
 
     // Utility methods and flow control
-    override fun setDrawTarget(target: Sprite) {
-        pDrawTarget = target
+    override fun setDrawTarget(target: Sprite?) {
+        if (target != null) {
+            pDrawTarget = target
+        } else {
+            targetLayer = 0
+            pDrawTarget = layers[0].drawTarget!!
+        }
+    }
+
+    override fun setDrawTarget(layer: Int) {
+        if (layer < layers.size) {
+            pDrawTarget = layers[layer].drawTarget!!
+            layers[layer].update = true
+            targetLayer = layer
+        }
     }
 
     override fun resetDrawTarget() {
@@ -278,6 +337,10 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
                 )
             }
         }
+    }
+
+    override fun drawString(pos: Vi2d, text: String, col: Pixel, scale: Int) {
+        drawString(pos.x, pos.y, text, col, scale)
     }
 
     override fun drawString(x: Int, y: Int, text: String, col: Pixel, scale: Int) {
@@ -585,112 +648,245 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
         }
     }
 
-    // main loop
-    private fun engineMainLoop() {
-        println("EngineThread() called")
-        println("programId = $programId")
-
-        val texID = glGetUniformLocation(programId, "renderedTexture".cstr)
-        println("texID = $texID")
-
-        val vertexArrayID = memScoped {
-            val output = alloc<UIntVar>()
-            glGenVertexArrays(1, output.ptr)
-            output.value
-        }
-
-        val vertexBufferData = floatArrayOf(
-            // Pos      // Tex
-            -1.0f, 1.0f, 0.0f, 0.0f,
-            1.0f, -1.0f, 1.0f, 1.0f,
-            -1.0f, -1.0f, 0.0f, 1.0f,
-
-            -1.0f, 1.0f, 0.0f, 0.0f,
-            1.0f, 1.0f, 1.0f, 0.0f,
-            1.0f, -1.0f, 1.0f, 1.0f
+    override fun drawDecal(pos: Vf2d, decal: Decal, scale: Vf2d, tint: Pixel) {
+        val vScreenSpacePos = Vf2d(
+            (pos.x * vInvScreenSize.x) * 2.0f - 1.0f,
+            ((pos.y * vInvScreenSize.y) * 2.0f - 1.0f) * -1.0f
         )
 
-        val vertexBuffer = memScoped {
-            val output = alloc<UIntVar>()
-            glGenBuffers(1, output.ptr)
-            output.value
+        val vScreenSpaceDim = Vf2d(
+            vScreenSpacePos.x + (2.0f * ((decal.sprite.width) * vInvScreenSize.x)) * scale.x,
+            vScreenSpacePos.y - (2.0f * ((decal.sprite.height) * vInvScreenSize.y)) * scale.y
+        )
+
+        val di = DecalInstance(
+            decal = decal,
+            tint = tint,
+            pos = arrayOf(
+                Vf2d(vScreenSpacePos.x, vScreenSpacePos.y),
+                Vf2d(vScreenSpacePos.x, vScreenSpaceDim.y),
+                Vf2d(vScreenSpaceDim.x, vScreenSpaceDim.y),
+                Vf2d(vScreenSpaceDim.x, vScreenSpacePos.y)
+            )
+        )
+
+        layers[targetLayer].decalInstanceList.add(di)
+    }
+
+    // Draws a region of a decal, with optional scale and tinting
+    override fun drawPartialDecal(
+        pos: Vf2d,
+        decal: Decal,
+        source_pos: Vf2d,
+        source_size: Vf2d,
+        scale: Vf2d,
+        tint: Pixel
+    ) {
+        val vScreenSpacePos = Vf2d(
+            (pos.x * vInvScreenSize.x) * 2.0f - 1.0f,
+            ((pos.y * vInvScreenSize.y) * 2.0f - 1.0f) * -1.0f
+        )
+
+        val vScreenSpaceDim = Vf2d(
+            vScreenSpacePos.x + (2.0f * source_size.x * vInvScreenSize.x) * scale.x,
+            vScreenSpacePos.y - (2.0f * source_size.y * vInvScreenSize.y) * scale.y
+        )
+
+        val uvtl: Vf2d = source_pos * decal.uvScale
+        val uvbr: Vf2d = uvtl + (source_size * decal.uvScale)
+        val di = DecalInstance(
+            decal = decal,
+            tint = tint,
+            pos = arrayOf(
+                Vf2d(vScreenSpacePos.x, vScreenSpacePos.y),
+                Vf2d(vScreenSpacePos.x, vScreenSpaceDim.y),
+                Vf2d(vScreenSpaceDim.x, vScreenSpaceDim.y),
+                Vf2d(vScreenSpaceDim.x, vScreenSpacePos.y)
+            ),
+            uv = arrayOf(
+                Vf2d(uvtl.x, uvtl.y),
+                Vf2d(uvtl.x, uvbr.y),
+                Vf2d(uvbr.x, uvbr.y),
+                Vf2d(uvbr.x, uvtl.y)
+            )
+        )
+
+        layers[targetLayer].decalInstanceList.add(di)
+    }
+
+    override fun drawWarpedDecal(decal: Decal, pos: Array<Vf2d>, tint: Pixel) {}
+
+    override fun drawWarpedDecal(decal: Decal, pos: List<Vf2d>, tint: Pixel) {}
+
+    override fun drawWarpedDecal(decal: Decal, pos: Vf2d, tint: Pixel) {}
+
+    override fun drawRotatedDecal(
+        pos: Vf2d,
+        decal: Decal,
+        angle: Float,
+        center: Vf2d,
+        scale: Vf2d,
+        tint: Pixel
+    ) {
+    }
+
+    override fun drawStringDecal(pos: Vf2d, text: String, col: Pixel, scale: Vf2d) {}
+
+    override fun drawPartialRotatedDecal(
+        pos: Vf2d,
+        decal: Decal,
+        angle: Float,
+        center: Vf2d,
+        source_pos: Vf2d,
+        source_size: Vf2d,
+        scale: Vf2d,
+        tint: Pixel
+    ) {
+    }
+
+    override fun drawPartialWarpedDecal(
+        decal: Decal,
+        pos: Array<Vf2d>,
+        source_pos: Vf2d,
+        source_size: Vf2d,
+        tint: Pixel
+    ) {
+    }
+
+    override fun drawPartialWarpedDecal(decal: Decal, pos: Vf2d, source_pos: Vf2d, source_size: Vf2d, tint: Pixel) {}
+
+    override fun drawPartialWarpedDecal(
+        decal: Decal,
+        pos: List<Vf2d>,
+        source_pos: Vf2d,
+        source_size: Vf2d,
+        tint: Pixel
+    ) {
+    }
+
+    /////////////////////
+    override fun createDecal(sprite: Sprite): Decal {
+        val id = this.renderer.createTexture(sprite.width, sprite.height)
+        val uvScale = Vf2d(1.0f / (sprite.width).toFloat(), 1.0f / (sprite.height).toFloat())
+        renderer.applyTexture(id)
+        renderer.updateTexture(id, sprite)
+        return Decal(id, sprite, uvScale)
+    }
+
+    override fun updateDecal(decal: Decal): Decal {
+        val id = decal.id
+        val sprite = decal.sprite
+        val uvScale = Vf2d(1.0f / (sprite.width).toFloat(), 1.0f / (sprite.height).toFloat())
+        renderer.applyTexture(id)
+        renderer.updateTexture(id, sprite)
+        return Decal(id, sprite, uvScale)
+    }
+
+    override fun deleteDecal(decal: Decal) {
+        renderer.deleteTexture(decal.id)
+    }
+
+    // main loop
+    private fun engineMainLoop() {
+        println("pge::engineMainLoop called")
+
+        try {
+            if (platform.threadStartUp() == RetCode.FAIL) return
+
+            prepareEngine()
+
+            if (!onUserCreate()) return
+
+            while (bAtomActive && !platform.shouldClose()) {
+                coreUpdate()
+            }
+        } finally {
+            platform.threadCleanUp()
+            println("EngineThread() return")
         }
-        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer)
+    }
 
-        vertexBufferData.usePinned {
-            glBufferData(GL_ARRAY_BUFFER, vertexBufferData.size.toLong() * 4, it.addressOf(0), GL_STATIC_DRAW)
+    private fun coreUpdate() {
+        // Handle Timing
+        tp2 = getTimeNanos()
+        val elapsedTime = tp2 - tp1
+        tp1 = tp2
+
+        platform.handleSystemEvent()
+        renderer.clearBuffer(Pixel.BLACK, true)
+
+        // Handle Frame Update
+        if (!onUserUpdate(elapsedTime.toFloat())) {
+            bAtomActive = false
         }
 
-        glBindVertexArray(vertexArrayID)
-        glEnableVertexAttribArray(0U)
-        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer)
-        glVertexAttribPointer(0U, 4, GL_FLOAT, false.toByte().toUByte(), 0, 0L.toCPointer<CPointed>())
-        glBindBuffer(GL_ARRAY_BUFFER, 0u)
-        glBindVertexArray(0u)
+        // Display Frame
+        renderer.updateViewport(vViewPos.data, vViewSize.data)
+        renderer.clearBuffer(Pixel.BLACK, true)
 
-        var tp1 = getTimeNanos()
-        var tp2: Long
-        var elapsedTime: Float
+        // Layer 0 must always exist
+        layers[0].update = true
+        layers[0].show = true
+        renderer.prepareDrawing()
 
-        do {
-            glViewport(nViewX, nViewY, nViewW, nViewH)
-            glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT or GL_STENCIL_BUFFER_BIT)
-            glUseProgram(programId)
+        layers.filter { it.show }
+            .forEach { layer: LayerDesc ->
+                if (layer.funcHook == null) {
+                    renderer.applyTexture(layer.resId)
 
-            tp2 = getTimeNanos()
-            elapsedTime = (tp2 - tp1) / 1_000_000_000.0F
-            tp1 = tp2
+                    if (layer.update) {
+                        renderer.updateTexture(layer.resId, layer.drawTarget!!)
+                        layer.update = false
+                    }
 
-            olcRefreshKeyboardAndMouseState()
+                    renderer.drawLayerQuad(layer.offset, layer.scale, layer.tint)
 
-            Sprite.nOverdrawCount = 0
-
-            // Handle Frame Update
-            if (!onUserUpdate(elapsedTime))
-                bAtomActive.value = 0
-
-            // Copy pixel array into texture
-            glActiveTexture(GL_TEXTURE0)
-            glBindTexture(GL_TEXTURE_2D, glBuffer)
-
-            pDrawTarget.data.usePinned {
-                glTexSubImage2D(
-                    GL_TEXTURE_2D,
-                    0,
-                    0,
-                    0,
-                    nScreenWidth,
-                    nScreenHeight,
-                    GL_RGBA,
-                    GL_UNSIGNED_BYTE,
-                    it.addressOf(0)
-                )
+                    // Display Decals in order for this layer
+                    layer.decalInstanceList.forEach { renderer.drawDecalQuad(it) }
+                    layer.decalInstanceList.clear()
+                } else {
+                    val func = layer.funcHook
+                    func()
+                }
             }
 
-            glUniform1i(texID, 0)
-            glBindVertexArray(vertexArrayID)
-            glDrawArrays(GL_TRIANGLES, 0, 6)
-            glBindVertexArray(0u)
+        // Present Graphics to screen
+        renderer.displayFrame()
 
-            pollEvents()
-            window.swapBuffers()
+        // Update Title Bar
+        fFrameTimer += elapsedTime.toFloat() / 1_000_000_000f
+        ++nFrameCount
 
-            // Update Title Bar
-            fFrameTimer += elapsedTime
-            nFrameCount++
+        if (fFrameTimer >= 1.0f) {
+            fps = nFrameCount
+            fFrameTimer -= 1.0f
+            val title = "$appName - FPS: $nFrameCount"
+            platform.setWindowTitle(title)
+            nFrameCount = 0
+        }
+    }
 
-            if (fFrameTimer >= 1.0f) {
-                fFrameTimer -= 1.0f
-                val sTitle = "OneLoneCoder.com - Pixel Game Engine - $appName - FPS: $nFrameCount"
-                fps = nFrameCount
-                window.setTitle(sTitle)
-                nFrameCount = 0
-            }
-        } while (!window.shouldClose && bAtomActive.value == 1)
+    private fun prepareEngine() {
+        println("pge::prepareEngine called")
+        if (platform.createGraphics(fullScreen, enableVsync, vViewPos, vViewSize) == RetCode.FAIL) return
+        // Construct default font sheet
+        olcConstructFontsheet()
+        // Create Primary Layer "0"
+        createLayer()
+        layers[0].update = true
+        layers[0].show = true
+        setDrawTarget(null)
+        tp1 = getTimeNanos()
+        tp2 = getTimeNanos()
+    }
 
-//        onUserDestroy()
-
-        println("EngineThread() return")
+    override fun createLayer(): Int {
+        val ld = LayerDesc()
+        ld.drawTarget = Sprite(screenSize.x, screenSize.y)
+        ld.resId = renderer.createTexture(screenSize.x, screenSize.y)
+        renderer.updateTexture(ld.resId, ld.drawTarget!!)
+        layers.add(ld)
+        return layers.size - 1
     }
 
     // internal handlers and functions
@@ -726,7 +922,7 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
         glfwSetInputMode(window.ptr, GLFW_CURSOR, GLFW_CURSOR_HIDDEN)
 
         // Keyboard keys handler
-        val keyNewStateStableRef = StableRef.create(pKeyNewState).also { stableRefList.add(it) }.asCPointer()
+        val keyNewStateStableRef = StableRef.create(keyNewState).also { stableRefList.add(it) }.asCPointer()
         val mapKeysStableRef = StableRef.create(keyboardKeysLocalMap).also { stableRefList.add(it) }.asCPointer()
 
         window.setKeyCallback { _, keyboardKey, _, action, _ ->
@@ -742,10 +938,10 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
         }
 
         // Mouse handler
-        val mouseNewStateStableRef = StableRef.create(pMouseNewState).also { stableRefList.add(it) }.asCPointer()
+        val mouseNewStateStableRef = StableRef.create(mouseNewState).also { stableRefList.add(it) }.asCPointer()
         val mouseKeysStableRef = StableRef.create(mouseKeysMap).also { stableRefList.add(it) }.asCPointer()
-        val mouseMove = StableRef.create(this::olcUpdateMouse).also { stableRefList.add(it) }.asCPointer()
-        val mouseScroll = StableRef.create(this::olcUpdateMouseWheel).also { stableRefList.add(it) }.asCPointer()
+        val mouseMove = StableRef.create(this::updateMouse).also { stableRefList.add(it) }.asCPointer()
+        val mouseScroll = StableRef.create(this::updateMouseWheel).also { stableRefList.add(it) }.asCPointer()
         val focusStableRef = StableRef.create(focusState).also { stableRefList.add(it) }.asCPointer()
 
         window.setMouseButtonCallback { _, mouseButton, action, _ ->
@@ -785,7 +981,7 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
         return true
     }
 
-    private fun olcUpdateViewport() {
+    internal fun olcUpdateViewport() {
         println("olc_UpdateViewport() called [$nScreenWidth, $nScreenHeight] [$nPixelWidth, $nPixelHeight]")
         val ww = nScreenWidth * nPixelWidth
         val wh = nScreenHeight * nPixelHeight
@@ -840,13 +1036,13 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
         return true
     }
 
-    private fun olcRefreshKeyboardAndMouseState() {
+    internal fun olcRefreshKeyboardAndMouseState() {
         for (i in 0..255) {
             pKeyboardState[i].bPressed = false
             pKeyboardState[i].bReleased = false
 
-            if (pKeyNewState[i] != pKeyOldState[i]) {
-                if (pKeyNewState[i]) {
+            if (keyNewState[i] != pKeyOldState[i]) {
+                if (keyNewState[i]) {
                     pKeyboardState[i].bPressed = !pKeyboardState[i].bHeld
                     pKeyboardState[i].bHeld = true
                 } else {
@@ -855,7 +1051,7 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
                 }
             }
 
-            pKeyOldState[i] = pKeyNewState[i]
+            pKeyOldState[i] = keyNewState[i]
         }
 
         // Handle User Input - Mouse
@@ -863,8 +1059,8 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
             pMouseState[i].bPressed = false
             pMouseState[i].bReleased = false
 
-            if (pMouseNewState[i] != pMouseOldState[i]) {
-                if (pMouseNewState[i]) {
+            if (mouseNewState[i] != pMouseOldState[i]) {
+                if (mouseNewState[i]) {
                     pMouseState[i].bPressed = !pMouseState[i].bHeld
                     pMouseState[i].bHeld = true
                 } else {
@@ -873,7 +1069,7 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
                 }
             }
 
-            pMouseOldState[i] = pMouseNewState[i]
+            pMouseOldState[i] = mouseNewState[i]
         }
 
         // Cache mouse coordinates so they remain
@@ -885,7 +1081,7 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
         nMouseWheelDeltaCache = 0
     }
 
-    private fun olcUpdateMouse(x: Double, y: Double) {
+    internal fun updateMouse(x: Double, y: Double) {
         // Mouse coords come in screen space
         // But leave in pixel space
 
@@ -915,11 +1111,12 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
             nMousePosYcache = 0
     }
 
-    private fun olcUpdateMouseWheel(delta: Double) {
+    internal fun updateMouseWheel(delta: Double) {
         nMouseWheelDeltaCache += delta.roundToInt()
     }
 
     private fun olcConstructFontsheet() {
+        println("pge::olcConstructFontsheet called")
         var data = "?Q`0001oOch0o01o@F40o0<AGD4090LAGD<090@A7ch0?00O7Q`0600>00000000"
         data += "O000000nOT0063Qo4d8>?7a14Gno94AA4gno94AaOT0>o3`oO400o7QN00000400"
         data += "Of80001oOg<7O7moBGT7O7lABET024@aBEd714AiOdl717a_=TH013Q>00000000"
@@ -959,6 +1156,8 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
                 }
             }
         }
+
+        fontDecal = createDecal(fontSprite)
     }
 
     private fun olcLoadShaders(): GLuint {
@@ -966,14 +1165,14 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
             val vertexShaderId = glCreateShader(GL_VERTEX_SHADER)
             val fragmentShaderId = glCreateShader(GL_FRAGMENT_SHADER)
 
-            glShaderSource(vertexShaderId, 1, arrayOf(vertexShaderSource).toCStringArray(memScope), null)
+            glShaderSource(vertexShaderId, 1, arrayOf(textureVertexShaderSource).toCStringArray(memScope), null)
             glCompileShader(vertexShaderId)
 
             glGetShaderInfoLog(vertexShaderId).also {
                 if (it.isNotBlank()) println(it)
             }
 
-            glShaderSource(fragmentShaderId, 1, arrayOf(fragmentShaderSource).toCStringArray(memScope), null)
+            glShaderSource(fragmentShaderId, 1, arrayOf(textureFragmentShaderSource).toCStringArray(memScope), null)
             glCompileShader(fragmentShaderId)
 
             glGetShaderInfoLog(fragmentShaderId).also {
@@ -1000,35 +1199,94 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
     }
 
     private lateinit var window: Window
+    private val layers: MutableList<LayerDesc> = mutableListOf()
+    private var targetLayer: Int = 0
     private var programId: UInt = 0u
+    private var tp1: Long = 0
+    private var tp2: Long = 0
     private var glBuffer = 0u
     private lateinit var pDefaultDrawTarget: Sprite
     private lateinit var pDrawTarget: Sprite
     private var nPixelMode = Pixel.Mode.NORMAL
     private var fBlendFactor: Float = 1.0f
-    private var nScreenWidth: Int = 256
-    private var nScreenHeight: Int = 240
-    private var nPixelWidth: Int = 4
-    private var nPixelHeight: Int = 4
+
+    private var screenSize: Vi2d = Vi2d(256, 240)
+    private inline var nScreenWidth: Int
+        inline get() = screenSize.x
+        inline set(v) {
+            screenSize.x = v
+        }
+    private inline var nScreenHeight: Int
+        inline get() = screenSize.y
+        inline set(v) {
+            screenSize.y = v
+        }
+
+    private var vInvScreenSize: Vf2d = Vf2d(1.0f / screenSize.x.toFloat(), 1.0f / screenSize.y.toFloat())
+
+    private var pixelSize: Vi2d = Vi2d(4, 4)
+    private inline var nPixelWidth: Int
+        inline get() = pixelSize.x
+        inline set(v) {
+            pixelSize.x = v
+        }
+    private inline var nPixelHeight: Int
+        inline get() = pixelSize.y
+        inline set(v) {
+            pixelSize.y = v
+        }
+
     private var nMousePosX: Int = 0
     private var nMousePosY: Int = 0
     private var nMouseWheelDelta: Int = 0
     private var nMousePosXcache: Int = 0
     private var nMousePosYcache: Int = 0
     private var nMouseWheelDeltaCache: Int = 0
-    private var nWindowWidth: Int = 0
-    private var nWindowHeight: Int = 0
-    private var nViewX: Int = 0
-    private var nViewY: Int = 0
-    private var nViewW: Int = 0
-    private var nViewH: Int = 0
-    private var bFullScreen: Boolean = false
+
+    internal var windowSize: Vi2d = Vi2d(0, 0)
+    private inline var nWindowWidth: Int
+        inline get() = windowSize.x
+        inline set(v) {
+            windowSize.x = v
+        }
+    private inline var nWindowHeight: Int
+        inline get() = windowSize.y
+        inline set(v) {
+            windowSize.y = v
+        }
+
+    private var vViewPos: Vi2d = Vi2d(0, 0)
+    private inline var nViewX: Int
+        inline get() = vViewPos.x
+        inline set(v) {
+            vViewPos.x = v
+        }
+    private inline var nViewY: Int
+        inline get() = vViewPos.y
+        inline set(v) {
+            vViewPos.y = v
+        }
+
+    internal var vViewSize: Vi2d = Vi2d(0, 0)
+    private var nViewW: Int
+        inline get() = vViewSize.x
+        inline set(v) {
+            vViewSize.x = v
+        }
+    private inline var nViewH: Int
+        inline get() = vViewSize.y
+        inline set(v) {
+            vViewSize.y = v
+        }
+
+    private var fullScreen: Boolean = false
+    private var enableVsync: Boolean = false
     private var fPixelX: Float = 1.0f
     private var fPixelY: Float = 1.0f
     private var fSubPixelOffsetX: Float = 0.0f
     private var fSubPixelOffsetY: Float = 0.0f
 
-    private val focusState = FocusState()
+    internal val focusState = FocusState()
 
     class FocusState {
         var bHasInputFocus: Boolean = true
@@ -1039,13 +1297,14 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
     private var nFrameCount: Int = 0
     private var fps: Int = 0
     private lateinit var fontSprite: Sprite
+    private lateinit var fontDecal: Decal
     private var funcPixelMode: ((Int, Int, Pixel, Pixel) -> Pixel)? = null
 
-    private var pKeyNewState: Array<Boolean> = Array(256) { false }
+    internal var keyNewState: Array<Boolean> = Array(256) { false }
     private var pKeyOldState: Array<Boolean> = Array(256) { false }
     private var pKeyboardState: Array<HWButton> = Array(256) { HWButton() }
 
-    private var pMouseNewState: Array<Boolean> = Array(5) { false }
+    internal var mouseNewState: Array<Boolean> = Array(5) { false }
     private var pMouseOldState: Array<Boolean> = Array(5) { false }
     private var pMouseState: Array<HWButton> = Array(5) { HWButton() }
 
@@ -1149,9 +1408,7 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
     private val mouseKeysMap =
         mapOf(MouseButton.LEFT to 1, MouseButton.RIGHT to 2, MouseButton.MIDDLE to 3)
 
-    companion object {
-        var bAtomActive: AtomicInt = AtomicInt(0)
-    }
+    private var bAtomActive: Boolean = true
 }
 
 private operator fun <T> Array<T>.component6(): T {

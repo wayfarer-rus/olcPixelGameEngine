@@ -10,6 +10,7 @@ repositories {
     }
 }
 
+val kglVersion = "0.1.9-dev-8"
 val mingwPath = File(System.getenv("MINGW64_DIR") ?: "C:/msys64/mingw64")
 
 kotlin {
@@ -27,8 +28,10 @@ kotlin {
     sourceSets {
         val nativeMain by creating {
             dependencies {
-                implementation("com.kgl:kgl-glfw:0.1.9-dev-8")
-                implementation("com.kgl:kgl-opengl:0.1.9-dev-8")
+                implementation("com.kgl:kgl-glfw:$kglVersion")
+                implementation("com.kgl:kgl-glfw-static:$kglVersion")
+                implementation("com.kgl:kgl-opengl:$kglVersion")
+                implementation("com.kgl:kgl-stb:$kglVersion")
             }
         }
 

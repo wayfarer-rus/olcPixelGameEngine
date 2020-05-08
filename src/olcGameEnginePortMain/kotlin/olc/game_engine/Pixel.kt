@@ -60,6 +60,10 @@ inline class Pixel(inline val n: UInt = 0xFF000000u) {
     inline val af: Float
         inline get() = a.toFloat()
 
+    fun asFloatArray(): FloatArray {
+        return floatArrayOf(rf, gf, bf, af)
+    }
+
     inline val r: UByte
         inline get() {
             return (0x000000FFu and n).toUByte()

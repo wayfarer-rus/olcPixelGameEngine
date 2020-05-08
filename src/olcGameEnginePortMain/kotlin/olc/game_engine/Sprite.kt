@@ -175,8 +175,8 @@ open class Sprite @ExperimentalUnsignedTypes constructor(inline var data: UIntAr
         val file: CPointer<FILE>? = fopen(imageFile, "w") ?: return RetCode.FAIL
 
         try {
-            fwrite(intArrayOf(width, height).refTo(0), (Int.SIZE_BYTES * 2).toULong(), 1, file)
-            fwrite(data.refTo(0), (data.size * UInt.SIZE_BYTES).toULong(), 1, file)
+            fwrite(intArrayOf(width, height).refTo(0), (Int.SIZE_BYTES * 2).toULong(), 1.toULong(), file)
+            fwrite(data.refTo(0), (data.size * UInt.SIZE_BYTES).toULong(), 1.toULong(), file)
             fflush(file)
         } finally {
             fclose(file)
@@ -200,7 +200,7 @@ fun CPointer<FILE>.fileToByteArray(): ByteArray {
 
     memScoped {
         val buffer = allocArray<ByteVar>(fileSize)
-        fread(buffer, fileSize.toULong(), 1, self)
+        fread(buffer, fileSize.toULong(), 1.toULong(), self)
         result = buffer.readBytes(fileSize.toInt())
     }
 
