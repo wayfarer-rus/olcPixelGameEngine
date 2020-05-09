@@ -134,7 +134,7 @@ class RendererGlfwImpl : Renderer {
     override fun drawDecalQuad(decal: DecalInstance) {
         val color = decal.tint.asFloatArray().map { it / 255.0f }.toFloatArray()
         val vertices = floatArrayOf(
-            // positions                        // colors   // texture coords
+            // positions                    // colors   // texture coords
             decal.pos[2].x, decal.pos[2].y, *color, decal.uv[2].x, decal.uv[2].y, 0.0f, decal.w[2], // top right
             decal.pos[1].x, decal.pos[1].y, *color, decal.uv[1].x, decal.uv[1].y, 0.0f, decal.w[1], // bottom right
             decal.pos[0].x, decal.pos[0].y, *color, decal.uv[0].x, decal.uv[0].y, 0.0f, decal.w[0], // bottom left
