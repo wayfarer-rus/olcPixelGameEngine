@@ -59,12 +59,13 @@ interface PixelGameEngine {
 
     fun onUserCreate(): Boolean
     fun onUserUpdate(elapsedTime: Float): Boolean
-//    fun onUserDestroy(): Boolean
+    fun onUserDestroy() {}
 
     fun isFocused(): Boolean
     fun isMouseInWindow(): Boolean
     fun getKey(k: Key): HWButton
     fun getMouseKey(b: Int): HWButton
+    fun getMouse(b: Int) = getMouseKey(b)
     fun getMouseX(): Int
     fun getMouseY(): Int
     fun getMouseWheel(): Int
@@ -90,10 +91,12 @@ interface PixelGameEngine {
     fun drawCircle(x: Int, y: Int, radius: Int, p: Pixel = Pixel.WHITE, mask: UByte = 0xFFu)
     fun fillCircle(x: Int, y: Int, radius: Int, p: Pixel = Pixel.WHITE)
     fun drawRect(x: Int, y: Int, w: Int, h: Int, p: Pixel = Pixel.WHITE)
+    fun drawRect(pos: Vi2d, size: Vi2d, p: Pixel = Pixel.WHITE) = drawRect(pos.x, pos.y, size.x, size.y, p)
     fun fillRect(x: Int, y: Int, w: Int, h: Int, p: Pixel = Pixel.WHITE)
     fun drawTriangle(point1: Pair<Int, Int>, point2: Pair<Int, Int>, point3: Pair<Int, Int>, p: Pixel = Pixel.WHITE)
     fun fillTriangle(point1: Pair<Int, Int>, point2: Pair<Int, Int>, point3: Pair<Int, Int>, p: Pixel = Pixel.WHITE)
     fun drawSprite(x: Int, y: Int, sprite: Sprite, scale: Int = 1)
+    fun drawSprite(pos: Vi2d, sprite: Sprite, scale: Int = 1) = drawSprite(pos.x, pos.y, sprite, scale)
     fun drawPartialSprite(x: Int, y: Int, sprite: Sprite, ox: Int, oy: Int, w: Int, h: Int, scale: Int = 1)
 
     // Draws a whole decal, with optional scale and tinting
@@ -806,6 +809,31 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
         scale: Vf2d,
         tint: Pixel
     ) {
+        val di = DecalInstance(
+            decal = decal,
+            tint = tint
+        )
+        di.pos[0] = (Vf2d(0.0f, 0.0f) - center) * scale
+        di.pos[1] = (Vf2d(0.0f, source_size.y) - center) * scale
+        di.pos[2] = (Vf2d(source_size.x, source_size.y) - center) * scale
+        di.pos[3] = (Vf2d(source_size.x, 0.0f) - center) * scale
+        val c = kotlin.math.cos(angle)
+        val s = kotlin.math.sin(angle)
+
+        for (i in 0 until 4) {
+            di.pos[i] = pos + Vf2d(di.pos[i].x * c - di.pos[i].y * s, di.pos[i].x * s + di.pos[i].y * c)
+            di.pos[i] = di.pos[i] * vInvScreenSize * 2.0f - Vf2d(1.0f, 1.0f)
+            di.pos[i].y *= -1.0f
+        }
+
+        val uvtl = source_pos * decal.uvScale
+        val uvbr = uvtl + (source_size * decal.uvScale)
+        di.uv[0] = Vf2d(uvtl.x, uvtl.y)
+        di.uv[1] = Vf2d(uvtl.x, uvbr.y)
+        di.uv[2] = Vf2d(uvbr.x, uvbr.y)
+        di.uv[3] = Vf2d(uvbr.x, uvtl.y)
+
+        layers[targetLayer].decalInstanceList.add(di)
     }
 
     override fun drawPartialWarpedDecal(
@@ -903,6 +931,7 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
                 coreUpdate()
             }
         } finally {
+            onUserDestroy()
             platform.threadCleanUp()
             println("EngineThread() return")
         }
@@ -916,9 +945,10 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
 
         platform.handleSystemEvent()
         renderer.clearBuffer(Pixel.BLACK, true)
+        val elapsedTimeFloat = elapsedTime.toFloat() / 1_000_000_000f
 
         // Handle Frame Update
-        if (!onUserUpdate(elapsedTime.toFloat())) {
+        if (!onUserUpdate(elapsedTimeFloat)) {
             bAtomActive = false
         }
 
@@ -956,7 +986,7 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
         renderer.displayFrame()
 
         // Update Title Bar
-        fFrameTimer += elapsedTime.toFloat() / 1_000_000_000f
+        fFrameTimer += elapsedTimeFloat
         ++nFrameCount
 
         if (fFrameTimer >= 1.0f) {

@@ -9,8 +9,8 @@
         </dependsOnModuleNames>
         <sourceSets>
           <sourceSet>olcPixelGameEngine.olcGameEnginePortMain</sourceSet>
-          <sourceSet>olcPixelGameEngine.nativeMain</sourceSet>
           <sourceSet>olcPixelGameEngine.commonTest</sourceSet>
+          <sourceSet>olcPixelGameEngine.nativeMain</sourceSet>
           <sourceSet>olcPixelGameEngine.commonMain</sourceSet>
         </sourceSets>
         <newMppModelJpsModuleKind>COMPILATION_AND_SOURCE_SET_HOLDER</newMppModelJpsModuleKind>

@@ -4,6 +4,7 @@ import kotlin.math.*
 
 inline class Vi2d(val data: Vf2d) {
     operator fun times(value: Vi2d) = Vi2d(data.times(value.data))
+    operator fun div(v: Vi2d) = Vi2d(data.div(v.data))
 
     constructor(x: Int, y: Int) : this(Vf2d(x, y))
 
@@ -40,6 +41,8 @@ data class Vf2d(
 
     operator fun times(p: Vf2d) = Vf2d(this.x * p.x, this.y * p.y)
 
+    operator fun div(rhs: Vf2d) = Vf2d(this.x / rhs.x, this.y / rhs.y)
+
     infix fun dot(p: Vf2d) = (this.x * p.x + this.y * p.y)
 
     fun roundToInt() = Vf2d(this.x.roundToInt(), this.y.roundToInt())
@@ -63,6 +66,10 @@ data class Vf2d(
 
     fun inBounds(topLeft: Vf2d, bottomRight: Vf2d): Boolean {
         return (this.x > topLeft.x && this.x < bottomRight.x && this.y > topLeft.y && this.y < bottomRight.y)
+    }
+
+    fun cross(rhs: Vf2d): Float {
+        return this.x * rhs.y - this.y * rhs.x
     }
 
     companion object {

@@ -67,6 +67,10 @@ kotlin {
                 entryPoint = "sample.main"
                 runTask?.args("")
             }
+            executable("olcDungeonWarpingApp") {
+                entryPoint = "sample.mainOlcDungeon"
+                runTask?.workingDir("src/olcGameEnginePortMain/resources")
+            }
             executable("FireworksDemo") {
                 entryPoint = "demos.fireworks.main"
                 runTask?.args("")
