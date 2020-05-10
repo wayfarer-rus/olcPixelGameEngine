@@ -89,6 +89,9 @@ interface PixelGameEngine {
 
     fun drawLine(start: Pair<Int, Int>, end: Pair<Int, Int>, p: Pixel = Pixel.WHITE, pattern: UInt = 0xFFFFFFFFu)
     fun drawCircle(x: Int, y: Int, radius: Int, p: Pixel = Pixel.WHITE, mask: UByte = 0xFFu)
+    fun drawCircle(pos: Vi2d, radius: Int, p: Pixel = Pixel.WHITE, mask: UByte = 0xFFu) =
+        drawCircle(pos.x, pos.y, radius, p, mask)
+
     fun fillCircle(x: Int, y: Int, radius: Int, p: Pixel = Pixel.WHITE)
     fun drawRect(x: Int, y: Int, w: Int, h: Int, p: Pixel = Pixel.WHITE)
     fun drawRect(pos: Vi2d, size: Vi2d, p: Pixel = Pixel.WHITE) = drawRect(pos.x, pos.y, size.x, size.y, p)
@@ -942,15 +945,18 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
         tp2 = getTimeNanos()
         val elapsedTime = tp2 - tp1
         tp1 = tp2
+        val elapsedTimeFloat = elapsedTime.toFloat() / 1_000_000_000f
+//        println("0: single frame update time: $elapsedTimeFloat")
 
         platform.handleSystemEvent()
         renderer.clearBuffer(Pixel.BLACK, true)
-        val elapsedTimeFloat = elapsedTime.toFloat() / 1_000_000_000f
 
+//        var t = getTimeNanos()
         // Handle Frame Update
         if (!onUserUpdate(elapsedTimeFloat)) {
             bAtomActive = false
         }
+//        println("1: single frame userUpdate time: ${(getTimeNanos() - t)/1_000_000_000f}")
 
         // Display Frame
         renderer.updateViewport(vViewPos.data, vViewSize.data)
@@ -973,9 +979,13 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
 
                     renderer.drawLayerQuad(layer.offset, layer.scale, layer.tint)
 
+//                    t = getTimeNanos()
                     // Display Decals in order for this layer
-                    layer.decalInstanceList.forEach { renderer.drawDecalQuad(it) }
+                    layer.decalInstanceList.forEach {
+                        renderer.drawDecalQuad(it)
+                    }
                     layer.decalInstanceList.clear()
+//                    println("2: single frame decalInstanceList draw time: ${(getTimeNanos() - t)/1_000_000_000f}")
                 } else {
                     val func = layer.funcHook
                     func()

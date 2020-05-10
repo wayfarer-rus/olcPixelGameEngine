@@ -46,7 +46,7 @@ class World {
 
     fun create(w: Int, h: Int) {
         size = Vi2d(w, h)
-        vCells.addAll(List(w * h) { nullCell })
+        vCells.addAll(List(w * h) { Cell() })
     }
 
     fun getCell(v: Vi2d): Cell {
@@ -95,7 +95,7 @@ class OlcDungeon : PixelGameEngineImpl() {
         rendSelect = Renderable.load("DungeonWarping/gfx/dng_select.png", this)
         rendAllWalls = Renderable.load("DungeonWarping/gfx/oldDungeon.png", this)
 
-        world.create(64, 64)
+        world.create(4, 4)
 
         for (y in 0 until world.size.y)
             for (x in 0 until world.size.x) {
@@ -234,7 +234,8 @@ class OlcDungeon : PixelGameEngineImpl() {
         if (getKey(Key.TAB).bHeld) {
             drawSprite(Vi2d(0, 0), rendAllWalls!!.sprite)
             drawRect(tileCursor * tileSize, tileSize)
-            if (getMouse(0).bPressed) tileCursor = vMouse / tileSize
+            drawCircle(vMouse, 1, Pixel.YELLOW)
+            if (getMouse(1).bPressed) tileCursor = vMouse / tileSize
             return true
         }
 
@@ -379,6 +380,6 @@ class OlcDungeon : PixelGameEngineImpl() {
 
 fun mainOlcDungeon() {
     val demo = OlcDungeon()
-    if (demo.construct(640, 480, 2, 2, false) == RetCode.OK)
+    if (demo.construct(640, 480, 4, 4, false) == RetCode.OK)
         demo.start()
 }

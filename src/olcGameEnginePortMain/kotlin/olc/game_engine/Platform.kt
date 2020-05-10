@@ -125,6 +125,7 @@ class PlatformGlfwImpl(
         window.setMouseButtonCallback { _, mouseButton, action, _ ->
             val mouseNewState = mouseNewStateStableRef.asStableRef<Array<Boolean>>().get()
             val mouseKeysMap = mouseKeysStableRef.asStableRef<Map<MouseButton, Int>>().get()
+//            println("$mouseButton: $action")
             mouseKeysMap[mouseButton]?.also {
                 when (action) {
                     Action.Press -> mouseNewState[it] = true
