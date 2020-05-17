@@ -2,6 +2,8 @@ package olc.game_engine
 
 import com.kgl.glfw.Glfw
 import com.kgl.opengl.*
+import copengl.GLuint
+import io.ktor.utils.io.core.Closeable
 import kotlinx.cinterop.*
 
 inline val Float.Companion.SIZE_BYTES get() = Int.SIZE_BYTES
@@ -13,7 +15,9 @@ interface Renderer {
     fun destroyDevice(): RetCode
     fun displayFrame()
     fun prepareDrawing()
-    fun drawLayerQuad(offset: Vf2d, scale: Vf2d, tint: Pixel)
+
+    //    fun drawLayerQuad(offset: Vf2d, scale: Vf2d, tint: Pixel)
+    fun drawLayerQuad(layer: LayerDesc)
     fun drawDecalQuad(decal: DecalInstance)
     fun createTexture(width: UInt, height: UInt): UInt
     fun updateTexture(id: UInt, spr: Sprite)
@@ -29,6 +33,14 @@ class RendererGlfwImpl : Renderer {
     private var layerShadersProgramId: UInt = 0u
     private var textureShadersProgramId: UInt = 0u
 
+    private lateinit var layerQuadOpenGlData: OpenGlData
+    private lateinit var decalQuadOpenGlData: OpenGlData
+    private var ebo: GLuint = 0u
+    private val indices = intArrayOf(
+        0, 1, 3, // first triangle
+        1, 2, 3  // second triangle
+    )
+
     override fun prepareDevice() {
         // nothing to do here
     }
@@ -39,7 +51,42 @@ class RendererGlfwImpl : Renderer {
         loadLayerShaders()
         loadTextureShaders()
 
+        this.ebo = glGenBuffer()
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo)
+        glBufferData(
+            GL_ELEMENT_ARRAY_BUFFER,
+            (indices.size * UInt.SIZE_BYTES).convert(),
+            indices.refTo(0),
+            GL_STATIC_DRAW
+        )
+
+        this.decalQuadOpenGlData = OpenGlData(
+            vao = glGenVertexArray(),
+            vbo = glGenBuffer()
+        )
+        this.layerQuadOpenGlData = OpenGlData(
+            vao = glGenVertexArray(),
+            vbo = glGenBuffer()
+        )
+
         return RetCode.OK
+    }
+
+    private class OpenGlData(val vao: GLuint, val vbo: GLuint) : Closeable {
+        var vertices: MutableMap<Any, FloatArray> = mutableMapOf()
+
+        override fun close() {
+            glDeleteVertexArrays(1, cValuesOf(vao))
+            glDeleteBuffers(1, cValuesOf(vbo))
+        }
+
+        operator fun component1(): GLuint {
+            return vao
+        }
+
+        operator fun component2(): GLuint {
+            return vbo
+        }
     }
 
     private fun loadTextureShaders() {
@@ -50,7 +97,15 @@ class RendererGlfwImpl : Renderer {
         this.layerShadersProgramId = loadShaders(layerVertexShaderSource, layerFragmentShaderSource)
     }
 
-    override fun destroyDevice() = RetCode.OK
+    override fun destroyDevice(): RetCode {
+        glDisableVertexAttribArray(0U)
+        glDisableVertexAttribArray(1U)
+        glDisableVertexAttribArray(2U)
+        glDeleteBuffers(1, cValuesOf(ebo))
+        layerQuadOpenGlData.close()
+        decalQuadOpenGlData.close()
+        return RetCode.OK
+    }
 
     override fun displayFrame() {
         Glfw.currentContext?.swapBuffers()
@@ -61,8 +116,11 @@ class RendererGlfwImpl : Renderer {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
     }
 
-    override fun drawLayerQuad(offset: Vf2d, scale: Vf2d, tint: Pixel) {
-        val color = tint.asFloatArray().map { it / 255.0f }.toFloatArray()
+    override fun drawLayerQuad(layer: LayerDesc) {
+        val offset = layer.offset
+        val scale = layer.scale
+        val tint = layer.tint
+        val color = tint.toFloatArray()
         val vertices = floatArrayOf(
             // positions          // colors           // texture coords
             1f, 1f, 0.0f, *color, 1.0f * scale.x + offset.x, 0.0f * scale.y + offset.y, // top right
@@ -70,14 +128,17 @@ class RendererGlfwImpl : Renderer {
             -1f, -1f, 0.0f, *color, 0.0f * scale.x + offset.x, 1.0f * scale.y + offset.y, // bottom left
             -1f, 1f, 0.0f, *color, 0.0f * scale.x + offset.x, 0.0f * scale.y + offset.y  // top left
         )
-        val indices = intArrayOf(
-            0, 1, 3, // first triangle
-            1, 2, 3  // second triangle
-        )
 
-        val vao = glGenVertexArray()
-        val vbo = glGenBuffer()
-        val ebo = glGenBuffer()
+        // skip this frame, it's identical
+        /*if (layerQuadOpenGlData.vertices.containsKey(layer.id) &&
+            vertices contentEquals layerQuadOpenGlData.vertices[layer.id]!!
+        ) {
+            return
+        }*/
+
+        val strideLen = (3 + 4 + 2) * Float.SIZE_BYTES
+        val (vao, vbo) = layerQuadOpenGlData
+//        layerQuadOpenGlData.vertices[layer.id] = vertices
 
         glBindVertexArray(vao)
 
@@ -93,7 +154,7 @@ class RendererGlfwImpl : Renderer {
         )
 
         // position attribute
-        glVertexAttribPointer(0u, 3, GL_FLOAT, false, 9 * Float.SIZE_BYTES, null)
+        glVertexAttribPointer(0u, 3, GL_FLOAT, false, strideLen, null)
         glEnableVertexAttribArray(0u)
         // color attribute
         glVertexAttribPointer(
@@ -101,7 +162,7 @@ class RendererGlfwImpl : Renderer {
             4,
             GL_FLOAT,
             false,
-            9 * Float.SIZE_BYTES,
+            strideLen,
             (3L * Float.SIZE_BYTES).toCPointer<CPointed>()
         )
         glEnableVertexAttribArray(1u)
@@ -111,44 +172,45 @@ class RendererGlfwImpl : Renderer {
             2,
             GL_FLOAT,
             false,
-            9 * Float.SIZE_BYTES,
+            strideLen,
             (7L * Float.SIZE_BYTES).toCPointer<CPointed>()
         )
         glEnableVertexAttribArray(2u)
 
         glUseProgram(this.layerShadersProgramId)
-        glUniform1i(glGetUniformLocation(this.layerShadersProgramId, "ourTexture"), 0)
-
         glBindVertexArray(vao)
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, null)
-
-        // release memory
-        glDisableVertexAttribArray(0U)
-        glDisableVertexAttribArray(1U)
-        glDisableVertexAttribArray(2U)
-        glDeleteVertexArrays(1, cValuesOf(vao))
-        glDeleteBuffers(1, cValuesOf(vbo))
-        glDeleteBuffers(1, cValuesOf(ebo))
     }
 
     override fun drawDecalQuad(decal: DecalInstance) {
-        val color = decal.tint.asFloatArray().map { it / 255.0f }.toFloatArray()
+//        println("draw decal quad started")
+//        var t = getTimeNanos()
+
+        val color = decal.tint.toFloatArray()
         val vertices = floatArrayOf(
             // positions                    // colors   // texture coords
             decal.pos[2].x, decal.pos[2].y, *color, decal.uv[2].x, decal.uv[2].y, 0.0f, decal.w[2], // top right
             decal.pos[1].x, decal.pos[1].y, *color, decal.uv[1].x, decal.uv[1].y, 0.0f, decal.w[1], // bottom right
             decal.pos[0].x, decal.pos[0].y, *color, decal.uv[0].x, decal.uv[0].y, 0.0f, decal.w[0], // bottom left
             decal.pos[3].x, decal.pos[3].y, *color, decal.uv[3].x, decal.uv[3].y, 0.0f, decal.w[3]  // top left
-        )
-        val strideLen = 2 + 4 + 4
-        val indices = intArrayOf(
-            0, 1, 3, // first triangle
-            1, 2, 3  // second triangle
-        )
+        ).map { kotlin.math.round(it * roundPrecision) / roundPrecision }.toFloatArray()
 
-        val vao = glGenVertexArray()
-        val vbo = glGenBuffer()
-        val ebo = glGenBuffer()
+        // skip this frame, it's identical
+        if (decal.decal.dirty.not() &&
+            decalQuadOpenGlData.vertices.containsKey(decal.decal) &&
+            vertices contentEquals decalQuadOpenGlData.vertices[decal.decal]!!
+        ) {
+//            println("1: ${getTimeNanos() - t}")
+            return
+        }
+
+        val strideLen = (2 + 4 + 4) * Float.SIZE_BYTES
+        val (vao, vbo) = decalQuadOpenGlData
+        decalQuadOpenGlData.vertices[decal.decal] = vertices
+        decal.decal.dirty = false
+
+//        println("1: ${getTimeNanos() - t}")//2800 ~ 4800
+//        t = getTimeNanos()
 
         glBindVertexArray(vao)
 
@@ -163,8 +225,11 @@ class RendererGlfwImpl : Renderer {
             GL_STATIC_DRAW
         )
 
+//        println("3: ${getTimeNanos() - t}")// 12300 ~ 1970200
+//        t = getTimeNanos()
+
         // position attribute
-        glVertexAttribPointer(0u, 2, GL_FLOAT, false, strideLen * Float.SIZE_BYTES, null)
+        glVertexAttribPointer(0u, 2, GL_FLOAT, false, strideLen, null)
         glEnableVertexAttribArray(0u)
         // color attribute
         glVertexAttribPointer(
@@ -172,7 +237,7 @@ class RendererGlfwImpl : Renderer {
             4,
             GL_FLOAT,
             false,
-            strideLen * Float.SIZE_BYTES,
+            strideLen,
             (2L * Float.SIZE_BYTES).toCPointer<CPointed>()
         )
         glEnableVertexAttribArray(1u)
@@ -182,24 +247,21 @@ class RendererGlfwImpl : Renderer {
             4,
             GL_FLOAT,
             false,
-            strideLen * Float.SIZE_BYTES,
+            strideLen,
             (6L * Float.SIZE_BYTES).toCPointer<CPointed>()
         )
         glEnableVertexAttribArray(2u)
 
-        glBindTexture(GL_TEXTURE_2D, decal.decal.id)
-        glUseProgram(this.textureShadersProgramId)
-        glUniform1i(glGetUniformLocation(this.textureShadersProgramId, "ourTexture"), 0)
+//        println("4: ${getTimeNanos() - t}")
+//        t = getTimeNanos()
 
+        glBindTexture(GL_TEXTURE_2D, decal.decal.id)
+//        applyTexture(decal.decal.id)
+        glUseProgram(this.textureShadersProgramId)
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, null)
 
-        // release memory
-        glDisableVertexAttribArray(0U)
-        glDisableVertexAttribArray(1U)
-        glDisableVertexAttribArray(2U)
-        glDeleteVertexArrays(1, cValuesOf(vao))
-        glDeleteBuffers(1, cValuesOf(vbo))
-        glDeleteBuffers(1, cValuesOf(ebo))
+//        println("7: ${getTimeNanos() - t}")
+//        println("draw decal quad started")
     }
 
     override fun createTexture(width: Int, height: Int) =
@@ -253,41 +315,42 @@ class RendererGlfwImpl : Renderer {
     }
 
     private fun loadShaders(vertexShaderSource: String, fragmentShaderSource: String): UInt {
-        return run {
-            val vertexShaderId = glCreateShader(GL_VERTEX_SHADER)
-            val fragmentShaderId = glCreateShader(GL_FRAGMENT_SHADER)
+        val vertexShaderId = glCreateShader(GL_VERTEX_SHADER)
+        val fragmentShaderId = glCreateShader(GL_FRAGMENT_SHADER)
 
-            glShaderSource(vertexShaderId, vertexShaderSource)
-            glCompileShader(vertexShaderId)
+        glShaderSource(vertexShaderId, vertexShaderSource)
+        glCompileShader(vertexShaderId)
 
-            glGetShaderInfoLog(vertexShaderId).also {
-                if (it.isNotBlank()) println(it)
-            }
-
-            glShaderSource(fragmentShaderId, fragmentShaderSource)
-            glCompileShader(fragmentShaderId)
-
-            glGetShaderInfoLog(fragmentShaderId).also {
-                if (it.isNotBlank()) println(it)
-            }
-
-            val programId = glCreateProgram()
-            glAttachShader(programId, vertexShaderId)
-            glAttachShader(programId, fragmentShaderId)
-            glLinkProgram(programId)
-
-            glGetProgramInfoLog(programId).also {
-                if (it.isNotBlank()) println(it)
-            }
-
-            glDetachShader(programId, vertexShaderId)
-            glDetachShader(programId, fragmentShaderId)
-
-            glDeleteShader(vertexShaderId)
-            glDeleteShader(fragmentShaderId)
-
-            programId
+        glGetShaderInfoLog(vertexShaderId).also {
+            if (it.isNotBlank()) println(it)
         }
+
+        glShaderSource(fragmentShaderId, fragmentShaderSource)
+        glCompileShader(fragmentShaderId)
+
+        glGetShaderInfoLog(fragmentShaderId).also {
+            if (it.isNotBlank()) println(it)
+        }
+
+        val programId = glCreateProgram()
+        glAttachShader(programId, vertexShaderId)
+        glAttachShader(programId, fragmentShaderId)
+        glLinkProgram(programId)
+
+        glGetProgramInfoLog(programId).also {
+            if (it.isNotBlank()) println(it)
+        }
+
+        glDetachShader(programId, vertexShaderId)
+        glDetachShader(programId, fragmentShaderId)
+
+        glDeleteShader(vertexShaderId)
+        glDeleteShader(fragmentShaderId)
+
+        return programId
     }
 
+    companion object {
+        const val roundPrecision = 10000.0f
+    }
 }

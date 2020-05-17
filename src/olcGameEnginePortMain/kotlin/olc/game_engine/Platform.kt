@@ -237,6 +237,7 @@ class PlatformGlfwImpl(
             KeyboardKey.RIGHT_SHIFT to Key.SHIFT.ordinal,
             KeyboardKey.LEFT_CONTROL to Key.CTRL.ordinal,
             KeyboardKey.RIGHT_CONTROL to Key.CTRL.ordinal,
+            KeyboardKey.LEFT_ALT to Key.ALT.ordinal,
 
             KeyboardKey._0 to Key.K0.ordinal,
             KeyboardKey._1 to Key.K1.ordinal,

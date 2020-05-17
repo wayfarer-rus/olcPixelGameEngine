@@ -4,7 +4,8 @@ package olc.game_engine
 data class Decal(
     val id: UInt,
     val sprite: Sprite,
-    val uvScale: Vf2d
+    val uvScale: Vf2d,
+    var dirty: Boolean = true
 )
 
 @ExperimentalUnsignedTypes

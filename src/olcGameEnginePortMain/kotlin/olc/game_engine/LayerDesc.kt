@@ -1,7 +1,10 @@
 package olc.game_engine
 
+import kotlin.system.getTimeNanos
+
 @ExperimentalUnsignedTypes
 class LayerDesc {
+    val id = getTimeNanos()
     val offset = Vf2d(0, 0)
     val scale = Vf2d(1, 1)
     var show = false

@@ -95,7 +95,7 @@ class OlcDungeon : PixelGameEngineImpl() {
         rendSelect = Renderable.load("DungeonWarping/gfx/dng_select.png", this)
         rendAllWalls = Renderable.load("DungeonWarping/gfx/oldDungeon.png", this)
 
-        world.create(4, 4)
+        world.create(16, 16)
 
         for (y in 0 until world.size.y)
             for (x in 0 until world.size.x) {
@@ -350,7 +350,7 @@ class OlcDungeon : PixelGameEngineImpl() {
         getFaceQuads(cursor, cameraAngle, cameraPitch, cameraZoom, Vec3d(cameraPos.x, 0.0f, cameraPos.y), vQuads)
         vQuads.forEach { q ->
             drawWarpedDecal(
-                rendSelect!!.decal,
+                rendSelect!!.decal.apply { dirty = true },
                 arrayOf(
                     Vf2d(q.points[0].x, q.points[0].y),
                     Vf2d(q.points[1].x, q.points[1].y),
@@ -380,6 +380,7 @@ class OlcDungeon : PixelGameEngineImpl() {
 
 fun mainOlcDungeon() {
     val demo = OlcDungeon()
-    if (demo.construct(640, 480, 4, 4, false) == RetCode.OK)
+    val xFactor = 1
+    if (demo.construct(640 / xFactor, 480 / xFactor, 2 * xFactor, 2 * xFactor, false) == RetCode.OK)
         demo.start()
 }

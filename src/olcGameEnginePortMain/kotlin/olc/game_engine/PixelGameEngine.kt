@@ -974,10 +974,10 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
 
                     if (layer.update) {
                         renderer.updateTexture(layer.resId, layer.drawTarget!!)
+                        renderer.drawLayerQuad(layer)
                         layer.update = false
                     }
 
-                    renderer.drawLayerQuad(layer.offset, layer.scale, layer.tint)
 
 //                    t = getTimeNanos()
                     // Display Decals in order for this layer
