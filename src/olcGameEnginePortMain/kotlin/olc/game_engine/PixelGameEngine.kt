@@ -172,6 +172,8 @@ interface PixelGameEngine {
 
 @ExperimentalUnsignedTypes
 abstract class PixelGameEngineImpl : PixelGameEngine {
+    private val spriteDecalInternalMap = mutableMapOf<Sprite, Decal>()
+
     // currently there is only GLFW platform and renderer
     // when I add another one, I will think about configuratoin option
     private val renderer: Renderer = RendererGlfwImpl()
@@ -215,6 +217,8 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
         platform.startSystemEventLoop()
 
         engineMainLoop()
+
+
 
         return platform.applicationCleanUp()
     }
@@ -583,7 +587,17 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
     }
 
     override fun drawSprite(x: Int, y: Int, sprite: Sprite, scale: Int) {
-        if (scale > 1) {
+        val decal = if (this.spriteDecalInternalMap.containsKey(sprite))
+            this.spriteDecalInternalMap[sprite]!!
+        else {
+            val decal = createDecal(sprite)
+            this.spriteDecalInternalMap[sprite] = decal
+            decal
+        }
+
+        drawDecal(Vf2d(x, y), decal.apply { dirty = true }, Vf2d(scale, scale))
+
+        /*if (scale > 1) {
             for (i in 0 until sprite.width)
                 for (j in 0 until sprite.height)
                     for (`is` in 0 until scale)
@@ -597,7 +611,7 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
             for (i in 0 until sprite.width)
                 for (j in 0 until sprite.height)
                     draw(x + i, y + j, sprite.getPixel(i, j)!!)
-        }
+        }*/
     }
 
     override fun drawPartialSprite(x: Int, y: Int, sprite: Sprite, ox: Int, oy: Int, w: Int, h: Int, scale: Int) {
@@ -935,6 +949,7 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
             }
         } finally {
             onUserDestroy()
+            this.spriteDecalInternalMap.values.forEach { deleteDecal(it) }
             platform.threadCleanUp()
             println("EngineThread() return")
         }

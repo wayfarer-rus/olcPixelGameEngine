@@ -8,6 +8,9 @@ repositories {
     maven {
         url = uri("https://dl.bintray.com/dominaezzz/kotlin-native")
     }
+    maven {
+        url = uri("https://kotlin.bintray.com/kotlinx")
+    }
 }
 
 val kglVersion = "0.1.9-dev-8"
@@ -31,6 +34,8 @@ kotlin {
                 implementation("com.kgl:kgl-glfw-static:$kglVersion")
                 implementation("com.kgl:kgl-opengl:$kglVersion")
                 implementation("com.kgl:kgl-stb:$kglVersion")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-native:1.3.6")
+//                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-native:1.3.5-native-mt-1.4-M1")
             }
         }
 
@@ -79,6 +84,10 @@ kotlin {
             }
             executable("BallsDemo") {
                 entryPoint = "demos.balls.main"
+                runTask
+            }
+            executable("MandelbrotDemo") {
+                entryPoint = "demos.mandelbrot.main"
                 runTask
             }
             // in progress

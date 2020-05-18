@@ -8,8 +8,8 @@
           <dependsOn>olcPixelGameEngine:nativeMain</dependsOn>
         </dependsOnModuleNames>
         <sourceSets>
-          <sourceSet>olcPixelGameEngine.commonMain</sourceSet>
           <sourceSet>olcPixelGameEngine.nativeMain</sourceSet>
+          <sourceSet>olcPixelGameEngine.commonMain</sourceSet>
         </sourceSets>
         <newMppModelJpsModuleKind>COMPILATION_AND_SOURCE_SET_HOLDER</newMppModelJpsModuleKind>
         <compilerSettings />
@@ -27,7 +27,9 @@
             <ArgumentParseErrors />
           </option>
           <option name="internalArguments">
-            <list />
+            <list>
+              <ManualLanguageFeatureSetting />
+            </list>
           </option>
         </compilerArguments>
       </configuration>

@@ -1,6 +1,11 @@
 package sample
 
 import io.ktor.utils.io.core.Closeable
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.flatMapConcat
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.runBlocking
 import olc.game_engine.*
 
 @ExperimentalUnsignedTypes
@@ -195,6 +200,39 @@ class OlcDungeon : PixelGameEngineImpl() {
         visible[Face.Top.ordinal] = checkNormalFun(7, 3, 2)
     }
 
+    private fun calculateFaceQuads(
+        vCell: Vi2d,
+        fAngle: Float,
+        fPitch: Float,
+        fScale: Float,
+        vCamera: Vec3d
+    ): List<Quad> {
+        val render = mutableListOf<Quad>()
+        val projCube = createCube(vCell, fAngle, fPitch, fScale, vCamera)
+        val cell = world.getCell(vCell)
+
+        val makeFaceFun: (Int, Int, Int, Int, Face) -> Unit = { v1, v2, v3, v4, f ->
+            render.add(
+                Quad(
+                    points = arrayOf(projCube[v1], projCube[v2], projCube[v3], projCube[v4]),
+                    title = cell.id[f.ordinal].data
+                )
+            )
+        }
+
+        if (!cell.wall) {
+            if (visible[Face.Floor.ordinal]) makeFaceFun(4, 0, 1, 5, Face.Floor)
+        } else {
+            if (visible[Face.South.ordinal]) makeFaceFun(3, 0, 1, 2, Face.South)
+            if (visible[Face.North.ordinal]) makeFaceFun(6, 5, 4, 7, Face.North)
+            if (visible[Face.East.ordinal]) makeFaceFun(7, 4, 0, 3, Face.East)
+            if (visible[Face.West.ordinal]) makeFaceFun(2, 1, 5, 6, Face.West)
+            if (visible[Face.Top.ordinal]) makeFaceFun(7, 3, 2, 6, Face.Top)
+        }
+
+        return render
+    }
+
     private fun getFaceQuads(
         vCell: Vi2d,
         fAngle: Float,
@@ -301,7 +339,7 @@ class OlcDungeon : PixelGameEngineImpl() {
 
         // 2) Get all visible sides of all visible "tile cubes"
         val vQuads = mutableListOf<Quad>()
-        for (y in 0 until world.size.y)
+        /*for (y in 0 until world.size.y)
             for (x in 0 until world.size.x)
                 getFaceQuads(
                     Vi2d(x, y),
@@ -310,7 +348,23 @@ class OlcDungeon : PixelGameEngineImpl() {
                     cameraZoom,
                     Vec3d(cameraPos.x, 0.0f, cameraPos.y),
                     vQuads
-                )
+                )*/
+
+        runBlocking {
+            (0 until world.size.y).asFlow()
+                .flatMapConcat { y ->
+                    (0 until world.size.x).asFlow()
+                        .map { x ->
+                            calculateFaceQuads(
+                                Vi2d(x, y),
+                                cameraAngle,
+                                cameraPitch,
+                                cameraZoom,
+                                Vec3d(cameraPos.x, 0.0f, cameraPos.y)
+                            )
+                        }
+                }.flatMapConcat { it.asFlow() }.toList(vQuads)
+        }
 
         // 3) Sort in order of depth, from farthest away to closest
         vQuads.sortWith(object : Comparator<Quad> {
