@@ -35,7 +35,6 @@ kotlin {
                 implementation("com.kgl:kgl-opengl:$kglVersion")
                 implementation("com.kgl:kgl-stb:$kglVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-native:1.3.6")
-//                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-native:1.3.5-native-mt-1.4-M1")
             }
         }
 

@@ -6,10 +6,12 @@ import kotlinx.coroutines.flow.collectIndexed
 import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import olc.game_engine.*
+import kotlin.native.concurrent.AtomicInt
+import kotlin.native.concurrent.Future
 import kotlin.native.concurrent.TransferMode
 import kotlin.native.concurrent.Worker
+import kotlin.properties.Delegates
 import kotlin.system.getTimeNanos
 
 class MandelbrotDemo : PixelGameEngineImpl() {
@@ -17,16 +19,24 @@ class MandelbrotDemo : PixelGameEngineImpl() {
 
     private lateinit var sprite: Sprite
     private val world = Pair(Vd2d(-2.5, 1.0), Vd2d(3.5, 2.0))
-    private var type = 0
-    private var name = "Naive"
+    private var type = 3
+    private var name = "Naive Workers"
     private var iterations = 64
     private lateinit var workers: Array<Worker>
+    private val asyncWorker = Worker.start()
     private var zoom = .2
+    private var calculationFinished = AtomicInt(0)
+    private var cursorOverlay by Delegates.notNull<Int>()
 
     override fun onUserCreate(): Boolean {
         iterations = 64
         sprite = getDrawTarget()
         workers = Array(4) { Worker.start() }
+
+        calculateMandelbrotAsync().result
+
+        cursorOverlay = createLayer()
+
         return true
     }
 
@@ -34,22 +44,21 @@ class MandelbrotDemo : PixelGameEngineImpl() {
         workers.forEach {
             it.requestTermination().result
         }
+
+        asyncWorker.requestTermination().result
     }
 
     override fun onUserUpdate(elapsedTime: Float): Boolean {
         val mousePos = Vi2d(getMouseX(), getMouseY())
-        clear()
+        setDrawTarget(0)
 
-        val t = getTimeNanos()
-        runBlocking {
-            when (type) {
-                0 -> calculate(Vi2d(0, 0), Vi2d(sprite.width, sprite.height), iterations)
-                1 -> calculateWithFlow(Vi2d(0, 0), Vi2d(sprite.width, sprite.height), iterations)
-                2 -> calculateWithAsync(Vi2d(0, 0), Vi2d(sprite.width, sprite.height), iterations)
-                3 -> calculateWithThreads(Vi2d(0, 0), Vi2d(sprite.width, sprite.height), iterations)
-            }
+        val time = if (calculationFinished.value == 1) {
+            val t = getTimeNanos()
+            calculateMandelbrotAsync()
+            (getTimeNanos() - t).toDouble() / 1_000_000_000
+        } else {
+            0.0
         }
-        val time = (getTimeNanos() - t).toDouble() / 1_000_000_000
 
         when {
             getKey(Key.ESCAPE).bReleased -> return false
@@ -98,7 +107,7 @@ class MandelbrotDemo : PixelGameEngineImpl() {
         )
         drawStringDecal(
             Vf2d(0, 16),
-            "Processing time: $time",
+            "Processing time: ${if (time > 0) time else "Calculating"}",
             Pixel.YELLOW,
             Vf2d(0.5f, 0.8f)
         )
@@ -109,8 +118,25 @@ class MandelbrotDemo : PixelGameEngineImpl() {
             Vf2d(0.5f, 0.8f)
         )
         // draw mouse cursor
+        setDrawTarget(cursorOverlay)
+        clear(Pixel.BLANK)
         drawCircle(mousePos, 1, Pixel.WHITE)
         return true
+    }
+
+    private fun calculateMandelbrotAsync(): Future<Unit> {
+        return asyncWorker.execute(TransferMode.UNSAFE, {
+            {
+                calculationFinished.value = 0
+                when (type) {
+                    0 -> calculate(Vi2d(0, 0), Vi2d(sprite.width, sprite.height), iterations)
+                    3 -> calculateWithThreads(Vi2d(0, 0), Vi2d(sprite.width, sprite.height), iterations)
+                }
+                calculationFinished.value = 1
+            }
+        }) {
+            it()
+        }
     }
 
     private fun handleZoomOut(mousePos: Vi2d, elapsedTime: Float) {

@@ -237,6 +237,7 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
         if (layer < layers.size) {
             pDrawTarget = layers[layer].drawTarget!!
             layers[layer].update = true
+            layers[layer].show = true
             targetLayer = layer
         }
     }
