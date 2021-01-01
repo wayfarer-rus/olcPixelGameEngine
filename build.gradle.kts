@@ -1,5 +1,5 @@
 plugins {
-    kotlin("multiplatform") version "1.3.71"
+    kotlin("multiplatform") version "1.4.10"
 }
 
 repositories {
@@ -13,7 +13,7 @@ repositories {
     }
 }
 
-val kglVersion = "0.1.9-dev-8"
+val kglVersion = "0.1.10"
 
 kotlin {
     // Determine host preset.

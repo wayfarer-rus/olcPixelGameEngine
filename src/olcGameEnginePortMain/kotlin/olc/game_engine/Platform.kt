@@ -61,7 +61,8 @@ class PlatformGlfwImpl(
 
     override fun createWindowPane(windowPos: Vi2d, windowSize: Vi2d, fullScreen: Boolean): RetCode {
         println("pge::createWindowPane called")
-        this.window = Window(windowSize.x, windowSize.y, "") {
+        this.window = Window(windowSize.x, windowSize.y, "")
+        /*{
             samples = 4
             contextVersionMajor = 3
             contextVersionMinor = 3
@@ -71,7 +72,7 @@ class PlatformGlfwImpl(
             if (kotlin.native.Platform.osFamily == OsFamily.MACOSX) {
                 openGLForwardCompat = true
             }
-        }
+        }*/
 
         // Have to take values from framebuffer to make little macbook happy
         pge.windowSize.x = window.frameBufferSize.first
