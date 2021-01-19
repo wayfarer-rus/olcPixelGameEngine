@@ -4,7 +4,9 @@ import kotlin.math.*
 
 inline class Vi2d(val data: Vf2d) {
     operator fun times(value: Vi2d) = Vi2d(data.times(value.data))
+    operator fun times(f: Float) = Vi2d(data.times(f))
     operator fun div(v: Vi2d) = Vi2d(data.div(v.data))
+    operator fun div(f: Float) = Vi2d(data.div(f))
 
     constructor(x: Int, y: Int) : this(Vf2d(x, y))
 
@@ -41,16 +43,22 @@ inline class Vf2d(val data: Vd2d) {
         get() = data.yi
 
     operator fun div(v: Vf2d) = Vf2d(data.div(v.data))
+    operator fun div(f: Float) = Vf2d(data.div(f))
     operator fun times(v: Vf2d) = Vf2d(data.times(v.data))
     operator fun times(f: Float) = Vf2d(data.times(f))
     operator fun times(d: Double) = Vf2d(data.times(d))
     operator fun plus(p: Vf2d) = Vf2d(data.plus(p.data))
     operator fun minus(p: Vf2d) = Vf2d(data.minus(p.data))
+    operator fun unaryMinus() = Vf2d(-data)
 
     infix fun dot(p: Vf2d) = data.dot(p.data).toFloat()
 
     fun mag() = data.mag().toFloat()
     fun cross(rhs: Vf2d) = data.cross(rhs.data).toFloat()
+
+    override fun toString(): String {
+        return "Vf2d(x=$x, y=$y)"
+    }
 }
 
 data class Vd2d(
@@ -70,6 +78,8 @@ data class Vd2d(
     operator fun plus(p: Vd2d) = Vd2d(this.x + p.x, this.y + p.y)
     operator fun minus(p: Vd2d) = Vd2d(this.x - p.x, this.y - p.y)
     operator fun div(rhs: Vd2d) = Vd2d(this.x / rhs.x, this.y / rhs.y)
+    operator fun div(f: Float) = Vd2d(this.x / f, this.y / f)
+    operator fun unaryMinus() = Vd2d(-this.x, -this.y)
 
     infix fun dot(p: Vd2d) = (this.x * p.x + this.y * p.y)
 

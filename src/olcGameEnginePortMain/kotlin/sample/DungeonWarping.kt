@@ -1,6 +1,6 @@
 package sample
 
-import io.ktor.utils.io.core.Closeable
+import io.ktor.utils.io.core.*
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.map
@@ -367,13 +367,11 @@ class OlcDungeon : PixelGameEngineImpl() {
         }
 
         // 3) Sort in order of depth, from farthest away to closest
-        vQuads.sortWith(object : Comparator<Quad> {
-            override fun compare(a: Quad, b: Quad): Int {
-                val z1 = (a.points[0].z + a.points[1].z + a.points[2].z + a.points[3].z) * 0.25f
-                val z2 = (b.points[0].z + b.points[1].z + b.points[2].z + b.points[3].z) * 0.25f
-                return z1.compareTo(z2)
-            }
-        })
+        vQuads.sortWith { a, b ->
+            val z1 = (a.points[0].z + a.points[1].z + a.points[2].z + a.points[3].z) * 0.25f
+            val z2 = (b.points[0].z + b.points[1].z + b.points[2].z + b.points[3].z) * 0.25f
+            z1.compareTo(z2)
+        }
 
         // 4) Iterate through all "tile cubes" and draw their visible faces
         clear(Pixel.BLACK)

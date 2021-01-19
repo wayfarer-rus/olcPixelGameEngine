@@ -3,7 +3,7 @@ package olc.game_engine
 import com.kgl.glfw.Glfw
 import com.kgl.opengl.*
 import copengl.GLuint
-import io.ktor.utils.io.core.Closeable
+import io.ktor.utils.io.core.*
 import kotlinx.cinterop.*
 
 inline val Float.Companion.SIZE_BYTES get() = Int.SIZE_BYTES
@@ -196,13 +196,14 @@ class RendererGlfwImpl : Renderer {
         ).map { kotlin.math.round(it * roundPrecision) / roundPrecision }.toFloatArray()
 
         // skip this frame, it's identical
-        if (decal.decal.dirty.not() &&
+        // NOTE: sometimes it cause decal to disappear
+        /*if (decal.decal.dirty.not() &&
             decalQuadOpenGlData.vertices.containsKey(decal.decal) &&
             vertices contentEquals decalQuadOpenGlData.vertices[decal.decal]!!
         ) {
 //            println("1: ${getTimeNanos() - t}")
             return
-        }
+        }*/
 
         val strideLen = (2 + 4 + 4) * Float.SIZE_BYTES
         val (vao, vbo) = decalQuadOpenGlData
@@ -256,7 +257,7 @@ class RendererGlfwImpl : Renderer {
 //        t = getTimeNanos()
 
         glBindTexture(GL_TEXTURE_2D, decal.decal.id)
-//        applyTexture(decal.decal.id)
+        applyTexture(decal.decal.id)
         glUseProgram(this.textureShadersProgramId)
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, null)
 

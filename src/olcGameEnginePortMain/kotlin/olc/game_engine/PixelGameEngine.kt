@@ -59,7 +59,8 @@ interface PixelGameEngine {
 
     fun onUserCreate(): Boolean
     fun onUserUpdate(elapsedTime: Float): Boolean
-    fun onUserDestroy() {}
+    fun onUserDestroy() { /* used by service implemetator to clenup allocated resources */
+    }
 
     fun isFocused(): Boolean
     fun isMouseInWindow(): Boolean
@@ -217,8 +218,6 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
         platform.startSystemEventLoop()
 
         engineMainLoop()
-
-
 
         return platform.applicationCleanUp()
     }

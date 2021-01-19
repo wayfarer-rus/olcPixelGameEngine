@@ -89,6 +89,10 @@ kotlin {
                 entryPoint = "demos.mandelbrot.main"
                 runTask
             }
+            executable("SortOfBejewelled") {
+                entryPoint = "demos.bejewelled_maybe.mainSortOfBejewelled"
+                runTask?.workingDir("src/olcGameEnginePortMain/resources")
+            }
             // in progress
             executable("PixelShooterGame") {
                 entryPoint = "game.pixel_shooter.main"
