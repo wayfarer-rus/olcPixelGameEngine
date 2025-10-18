@@ -353,7 +353,7 @@ class AsteroidsDemo : PixelGameEngineImpl() {
 fun replaceCharAtIndex(input: String, i: Int, c: Char): String {
     val chars = input.toCharArray()
     chars[i] = c
-    return String(chars)
+    return chars.concatToString()
 }
 
 fun Pair<Float, Float>.roundToInt() = Pair(this.first.roundToInt(), this.second.roundToInt())

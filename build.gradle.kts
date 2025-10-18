@@ -1,19 +1,14 @@
+import org.jetbrains.kotlin.konan.target.Family
+
 plugins {
-    kotlin("multiplatform") version "1.4.10"
+    kotlin("multiplatform") version "2.3.0-Beta1"
 }
 
 repositories {
     mavenCentral()
-    jcenter()
-    maven {
-        url = uri("https://dl.bintray.com/dominaezzz/kotlin-native")
-    }
-    maven {
-        url = uri("https://kotlin.bintray.com/kotlinx")
-    }
 }
 
-val kglVersion = "0.1.10"
+val mingwPath = File(System.getenv("MINGW64_DIR") ?: "C:/msys64/mingw64")
 
 kotlin {
     // Determine host preset.
@@ -28,26 +23,27 @@ kotlin {
     }
 
     sourceSets {
-        val nativeMain by creating {
-            dependencies {
-                implementation("com.kgl:kgl-glfw:$kglVersion")
-                implementation("com.kgl:kgl-glfw-static:$kglVersion")
-                implementation("com.kgl:kgl-opengl:$kglVersion")
-                implementation("com.kgl:kgl-stb:$kglVersion")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-native:1.3.6")
-            }
+        val olcGameEnginePortMain by getting {
         }
 
         hostTarget.apply {
-            compilations.all {
-                defaultSourceSet {
-                    dependsOn(nativeMain)
+            val glfwHeaderDirs: List<Any> = when (konanTarget.family) {
+                Family.OSX -> listOf("/opt/local/include", "/usr/local/include")
+                Family.LINUX -> listOf("/usr/include", "/usr/include/x86_64-linux-gnu")
+                Family.MINGW -> listOf(mingwPath.resolve("include"))
+                else -> emptyList()
+            }
+
+            compilations["main"].cinterops {
+                val libglfw3 by creating {
+                    glfwHeaderDirs.forEach { includeDirs.headerFilterOnly(it) }
                 }
             }
         }
 
         all {
             languageSettings.enableLanguageFeature("InlineClasses")
+            languageSettings.optIn("kotlinx.cinterop.ExperimentalForeignApi")
         }
     }
 
@@ -55,48 +51,31 @@ kotlin {
         binaries {
             executable("olcGameEnginePortSampleApp") {
                 entryPoint = "sample.main"
-                runTask?.args("")
-            }
-            executable("olcDungeonWarpingApp") {
-                entryPoint = "sample.mainOlcDungeon"
-                runTask?.workingDir("src/olcGameEnginePortMain/resources")
+                runTaskProvider?.configure { args("") }
             }
             executable("FireworksDemo") {
                 entryPoint = "demos.fireworks.main"
-                runTask?.args("")
+                runTaskProvider?.configure { args("") }
             }
             executable("AsteroidsDemo") {
                 entryPoint = "demos.asteroids.main"
-                runTask?.args("")
+                runTaskProvider?.configure { args("") }
             }
             executable("BreackoutDemo") {
                 entryPoint = "demos.breakout.main"
-                runTask
             }
             executable("BoidsDemo") {
                 entryPoint = "demos.boids.main"
-                runTask
             }
             executable("DestructibleBlockDemo") {
                 entryPoint = "demos.destructible_sprite.main"
-                runTask
             }
             executable("BallsDemo") {
                 entryPoint = "demos.balls.main"
-                runTask
-            }
-            executable("MandelbrotDemo") {
-                entryPoint = "demos.mandelbrot.main"
-                runTask
-            }
-            executable("SortOfBejewelled") {
-                entryPoint = "demos.bejewelled_maybe.mainSortOfBejewelled"
-                runTask?.workingDir("src/olcGameEnginePortMain/resources")
             }
             // in progress
             executable("PixelShooterGame") {
                 entryPoint = "game.pixel_shooter.main"
-                runTask
             }
         }
     }

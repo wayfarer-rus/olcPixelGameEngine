@@ -83,11 +83,11 @@ class PixelShooterGame : PixelGameEngineImpl() {
     }
 }
 
-inline class Dimensions(inline val p: Pair<Int, Int>) {
-    inline val w: Int
-        inline get() = p.first
-    inline val h: Int
-        inline get() = p.second
+inline class Dimensions(val p: Pair<Int, Int>) {
+    val w: Int
+        get() = p.first
+    val h: Int
+        get() = p.second
 
     constructor(w: Int, h: Int) : this(Pair(w, h))
 }

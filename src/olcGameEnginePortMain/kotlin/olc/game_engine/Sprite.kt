@@ -1,15 +1,11 @@
 package olc.game_engine
 
-import com.kgl.stb.Channels
-import com.kgl.stb.STBIOCallbacks
-import com.kgl.stb.STBImage
-import io.ktor.utils.io.bits.Memory
-import io.ktor.utils.io.bits.copyTo
 import kotlinx.cinterop.*
 import platform.posix.*
 import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.native.concurrent.ThreadLocal
 
 /**
 
@@ -48,8 +44,8 @@ GitHub:		https://www.github.com/onelonecoder
 Homepage:	https://www.onelonecoder.com
 Patreon:	https://www.patreon.com/javidx9
  */
-@ExperimentalUnsignedTypes
-open class Sprite constructor(inline var data: UIntArray = UIntArray(0)) {
+
+open class Sprite @ExperimentalUnsignedTypes constructor(var data: UIntArray = UIntArray(0)) {
     enum class Mode { NORMAL, PERIODIC }
 
     @ThreadLocal
@@ -57,14 +53,17 @@ open class Sprite constructor(inline var data: UIntArray = UIntArray(0)) {
         var nOverdrawCount: Int = 0
     }
 
+    @ExperimentalUnsignedTypes
     constructor(imageFile: String) : this() {
         loadFromFile(imageFile)
     }
 
+    @ExperimentalUnsignedTypes
     constructor(imageFile: String, pack: ResourcePack?) : this() {
         loadFromPGESprFile(imageFile, pack)
     }
 
+    @ExperimentalUnsignedTypes
     constructor(w: Int, h: Int) : this(UIntArray(w * h)) {
         width = w
         height = h
@@ -74,6 +73,7 @@ open class Sprite constructor(inline var data: UIntArray = UIntArray(0)) {
         modeSample = mode
     }
 
+    @ExperimentalUnsignedTypes
     fun getPixel(x: Int, y: Int): Pixel? {
         return if (modeSample == Mode.NORMAL) {
             if (x < 0 || x >= width || y < 0 || y >= height)
@@ -85,6 +85,7 @@ open class Sprite constructor(inline var data: UIntArray = UIntArray(0)) {
         }
     }
 
+    @ExperimentalUnsignedTypes
     fun setPixel(x: Int, y: Int, p: Pixel): Boolean {
         nOverdrawCount++
 
@@ -95,12 +96,14 @@ open class Sprite constructor(inline var data: UIntArray = UIntArray(0)) {
         return true
     }
 
+    @ExperimentalUnsignedTypes
     fun sample(x: Float, y: Float): Pixel? {
         val sx = min((x * width).toInt(), width - 1)
         val sy = min((y * height).toInt(), height - 1)
         return getPixel(sx, sy)
     }
 
+    @ExperimentalUnsignedTypes
     fun sampleBL(u: Float, v: Float): Pixel {
         val U = u * width - 0.5f
         val V = v * height - 0.5f
@@ -123,50 +126,18 @@ open class Sprite constructor(inline var data: UIntArray = UIntArray(0)) {
         )
     }
 
-    fun loadFromFile(imageFile: String, pack: ResourcePack? = null): RetCode {
-        val file = fopen(imageFile, "rb")!!
-
-        val image = try {
-            STBImage.load(object : STBIOCallbacks {
-                override fun skip(n: Int) {
-                    fseek(file, n.convert(), SEEK_CUR)
-                }
-
-                override val eof: Boolean get() = feof(file) != 0
-
-                override fun read(data: Memory): Int {
-                    return io.ktor.utils.io.streams.fread(data, 0, data.size32, file)
-                }
-            }, Channels.RGB_ALPHA)
-        } finally {
-            fclose(file)
-        }
-
-        if (image.info.channels != Channels.RGB_ALPHA) error("Make sure that image '$file' is in RGBA format")
-
-        this.width = image.info.width
-        this.height = image.info.height
-
-        val buffer = ByteArray(image.buffer.size32)
-        image.buffer.copyTo(buffer, 0, image.buffer.size32, 0)
-        image.close()
-
-        this.data = buffer.map { it.toUByte() }
-            .chunked(4)
-            .map { (r, g, b, a) ->
-                Pixel(r, g, b, a).n
-            }.toUIntArray()
-
-        return RetCode.OK
+    fun loadFromFile(imageFile: String, pack: ResourcePack? = null): rcode {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    fun loadFromPGESprFile(imageFile: String, pack: ResourcePack? = null): RetCode {
-        val readData: (buffer: ByteArray) -> RetCode = { buffer ->
+    @ExperimentalUnsignedTypes
+    fun loadFromPGESprFile(imageFile: String, pack: ResourcePack? = null): rcode {
+        val readData: (buffer: ByteArray) -> rcode = { buffer ->
             println("size: " + buffer.size)
 
             if (buffer.size < 12) {
                 println("Failed because minimal size for file isn't met")
-                RetCode.FAIL
+                rcode.FAIL
             } else {
                 width = buffer.sliceArray(0..3).toInt()
                 height = buffer.sliceArray(4..7).toInt()
@@ -174,7 +145,7 @@ open class Sprite constructor(inline var data: UIntArray = UIntArray(0)) {
 
                 if (width <= 0 || height <= 0 || (width * height * UInt.SIZE_BYTES) > (buffer.size - Int.SIZE_BYTES * 2)) {
                     println("Failed because of the inconsistent file size")
-                    RetCode.FAIL
+                    rcode.FAIL
                 } else {
                     data = buffer.slice(8 until buffer.size).take(width * height * UInt.SIZE_BYTES)
                         .map { it.toUByte() }
@@ -183,35 +154,36 @@ open class Sprite constructor(inline var data: UIntArray = UIntArray(0)) {
                             Pixel(r, g, b, a).n
                         }.toUIntArray()
 
-                    RetCode.OK
+                    rcode.OK
                 }
             }
         }
 
         return if (pack == null) {
-            val fh: CPointer<FILE> = fopen(imageFile, "r") ?: return RetCode.FAIL
+            val fh: CPointer<FILE> = fopen(imageFile, "r") ?: return rcode.FAIL
             try {
                 readData(fh.fileToByteArray())
             } finally {
                 fclose(fh)
             }
         } else {
-            pack.GetStreamBuffer(imageFile)?.let { readData(it) } ?: RetCode.FAIL
+            pack.GetStreamBuffer(imageFile)?.let { readData(it) } ?: rcode.FAIL
         }
     }
 
-    fun saveToPGESprFile(imageFile: String): RetCode {
-        val file: CPointer<FILE>? = fopen(imageFile, "w") ?: return RetCode.FAIL
+    @ExperimentalUnsignedTypes
+    fun saveToPGESprFile(imageFile: String): rcode {
+        val file: CPointer<FILE> = fopen(imageFile, "w") ?: return rcode.FAIL
 
         try {
-            fwrite(intArrayOf(width, height).refTo(0), (Int.SIZE_BYTES * 2).toULong(), 1.toULong(), file)
-            fwrite(data.refTo(0), (data.size * UInt.SIZE_BYTES).toULong(), 1.toULong(), file)
+            fwrite(intArrayOf(width, height).refTo(0), (Int.SIZE_BYTES * 2).toULong(), 1UL, file)
+            fwrite(data.refTo(0), (data.size * UInt.SIZE_BYTES).toULong(), 1UL, file)
             fflush(file)
         } finally {
             fclose(file)
         }
 
-        return RetCode.OK
+        return rcode.OK
     }
 
     var width = 0
@@ -229,7 +201,7 @@ fun CPointer<FILE>.fileToByteArray(): ByteArray {
 
     memScoped {
         val buffer = allocArray<ByteVar>(fileSize)
-        fread(buffer, fileSize.toULong(), 1.toULong(), self)
+        fread(buffer, fileSize.toULong(), 1UL, self)
         result = buffer.readBytes(fileSize.toInt())
     }
 

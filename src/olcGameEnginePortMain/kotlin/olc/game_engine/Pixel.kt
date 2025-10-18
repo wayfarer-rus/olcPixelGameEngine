@@ -39,7 +39,7 @@ Patreon:	https://www.patreon.com/javidx9
  */
 
 @ExperimentalUnsignedTypes
-inline class Pixel(inline val n: UInt = 0xFF000000u) {
+inline class Pixel(val n: UInt = 0xFF000000u) {
 
     constructor(red: UByte, green: UByte, blue: UByte, alpha: UByte = 255u) :
             this((alpha.toUInt() shl 24) or (blue.toUInt() shl 16) or (green.toUInt() shl 8) or red.toUInt())
@@ -51,37 +51,33 @@ inline class Pixel(inline val n: UInt = 0xFF000000u) {
     constructor(red: Float, green: Float, blue: Float) :
             this(red.toInt(), green.toInt(), blue.toInt())
 
-    inline val rf: Float
-        inline get() = r.toFloat()
-    inline val gf: Float
-        inline get() = g.toFloat()
-    inline val bf: Float
-        inline get() = b.toFloat()
-    inline val af: Float
-        inline get() = a.toFloat()
+    val rf: Float
+        get() = r.toFloat()
+    val gf: Float
+        get() = g.toFloat()
+    val bf: Float
+        get() = b.toFloat()
+    val af: Float
+        get() = a.toFloat()
 
-    fun toFloatArray(): FloatArray {
-        return floatArrayOf(rf / 255.0f, gf / 255.0f, bf / 255.0f, af / 255.0f)
-    }
-
-    inline val r: UByte
-        inline get() {
+    val r: UByte
+        get() {
             return (0x000000FFu and n).toUByte()
         }
-    inline val g: UByte
-        inline get() {
+    val g: UByte
+        get() {
             return (0x0000FF00u and n shr 8).toUByte()
         }
-    inline val b: UByte
-        inline get() {
+    val b: UByte
+        get() {
             return (0x00FF0000u and n shr 16).toUByte()
         }
-    inline val a: UByte
-        inline get() {
+    val a: UByte
+        get() {
             return (0xFF000000u and n shr 24).toUByte()
         }
-    inline val ni: Int
-        inline get() {
+    val ni: Int
+        get() {
             return n.toInt()
         }
 
@@ -114,17 +110,6 @@ inline class Pixel(inline val n: UInt = 0xFF000000u) {
         val VERY_DARK_MAGENTA = Pixel(64u, 0u, 64u)
         val BLACK = Pixel(0u, 0u, 0u)
         val BLANK = Pixel(0u, 0u, 0u, 0u)
-        val COLORS = arrayOf(
-            BLACK,
-            GREY, DARK_GREY, VERY_DARK_GREY,
-            RED, DARK_RED, VERY_DARK_RED,
-            YELLOW, DARK_YELLOW, VERY_DARK_YELLOW,
-            GREEN, DARK_GREEN, VERY_DARK_GREEN,
-            CYAN, DARK_CYAN, VERY_DARK_CYAN,
-            BLUE, DARK_BLUE, VERY_DARK_BLUE,
-            MAGENTA, DARK_MAGENTA, VERY_DARK_MAGENTA,
-            WHITE
-        )
     }
 
     override fun toString(): String {

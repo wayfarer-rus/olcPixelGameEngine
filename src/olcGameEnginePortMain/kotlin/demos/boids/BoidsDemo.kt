@@ -4,7 +4,7 @@ import geometry_2d.Point
 import geometry_2d.Shape
 import olc.game_engine.Pixel
 import olc.game_engine.PixelGameEngineImpl
-import olc.game_engine.RetCode
+import olc.game_engine.rcode
 import kotlin.math.PI
 import kotlin.random.Random
 
@@ -116,7 +116,7 @@ class BoidsDemo : PixelGameEngineImpl() {
     private lateinit var boids: MutableList<Boid>
 
     companion object {
-        const val maxBoids = 50
+        const val maxBoids = 200
     }
 }
 
@@ -157,7 +157,7 @@ class Boid(
         const val visibilityRadius = 40f
         const val distanceThreshold = 15f
         const val poll = 0.1f
-        const val speed = 50f
+        const val speed = 150f
         val initialShape = Shape(
             Point(0.0f, -5.0f),
             Point(-2.5f, +2.5f),
@@ -169,5 +169,5 @@ class Boid(
 @ExperimentalUnsignedTypes
 fun main() {
     val demo = BoidsDemo()
-    if (demo.construct() == RetCode.OK) demo.start()
+    if (demo.construct(1024, 768, 1, 1) == rcode.OK) demo.start()
 }

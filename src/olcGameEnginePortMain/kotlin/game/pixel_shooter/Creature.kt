@@ -49,10 +49,10 @@ class Vector(vx: Float, vy: Float) : Pos<Float>(vx, vy) {
         return "Vector(${super.toString()})"
     }
 
-    inline val vx: Float
-        inline get() = x
-    inline val vy: Float
-        inline get() = y
+    val vx: Float
+        get() = x
+    val vy: Float
+        get() = y
 }
 
 private operator fun Pos<Float>.plus(vector: Vector): Pos<Float> = Pos(this.x + vector.vx, this.y + vector.vy)
