@@ -1,881 +1,0 @@
-
-åD
-kotlin
-Int
-kotlinx
-cinterop
-internal
-CCall
-id
-knifunptr_cglfw0_glfwInit
-ExperimentalForeignApi
-glfwInit
-Unit
-knifunptr_cglfw1_glfwTerminate
-glfwTerminate
-hint
-value
-knifunptr_cglfw2_glfwInitHint
-glfwInitHint
-
-CValuesRef
-IntVarOf
-IntVar
-major
-minor
-rev
-knifunptr_cglfw3_glfwGetVersion
-glfwGetVersion
-CPointer
-	ByteVarOf
-Byte
-ByteVar
-%knifunptr_cglfw4_glfwGetVersionString
-glfwGetVersionString
-CPointerVarOf
-CPointerVar
-description
-knifunptr_cglfw5_glfwGetError
-glfwGetError
-	CFunction
-	Function2
-cglfw
-GLFWerrorfun
-callback
-%knifunptr_cglfw6_glfwSetErrorCallback
-glfwSetErrorCallback
-count
-cnames
-structs
-GLFWmonitor
- knifunptr_cglfw7_glfwGetMonitors
-glfwGetMonitors
-&knifunptr_cglfw8_glfwGetPrimaryMonitor
-glfwGetPrimaryMonitor
-monitor
-xpos
-ypos
-"knifunptr_cglfw9_glfwGetMonitorPos
-glfwGetMonitorPos
-width
-height
-(knifunptr_cglfw10_glfwGetMonitorWorkarea
-glfwGetMonitorWorkarea
-widthMM
-heightMM
-,knifunptr_cglfw11_glfwGetMonitorPhysicalSize
-glfwGetMonitorPhysicalSize
-
-FloatVarOf
-Float
-FloatVar
-xscale
-yscale
-,knifunptr_cglfw12_glfwGetMonitorContentScale
-glfwGetMonitorContentScale
-$knifunptr_cglfw13_glfwGetMonitorName
-glfwGetMonitorName
-pointer
-+knifunptr_cglfw14_glfwSetMonitorUserPointer
-glfwSetMonitorUserPointer
-CPointed
-COpaquePointer
-+knifunptr_cglfw15_glfwGetMonitorUserPointer
-glfwGetMonitorUserPointer
-GLFWmonitorfun
-(knifunptr_cglfw16_glfwSetMonitorCallback
-glfwSetMonitorCallback
-GLFWvidmode
-#knifunptr_cglfw17_glfwGetVideoModes
-glfwGetVideoModes
-"knifunptr_cglfw18_glfwGetVideoMode
-glfwGetVideoMode
-gamma
-knifunptr_cglfw19_glfwSetGamma
-glfwSetGamma
-GLFWgammaramp
-"knifunptr_cglfw20_glfwGetGammaRamp
-glfwGetGammaRamp
-ramp
-"knifunptr_cglfw21_glfwSetGammaRamp
-glfwSetGammaRamp
-(knifunptr_cglfw22_glfwDefaultWindowHints
-glfwDefaultWindowHints
- knifunptr_cglfw23_glfwWindowHint
-glfwWindowHint
-String
-CString
-&knifunptr_cglfw24_glfwWindowHintString
-glfwWindowHintString
-title
-
-GLFWwindow
-share
-"knifunptr_cglfw25_glfwCreateWindow
-glfwCreateWindow
-window
-#knifunptr_cglfw26_glfwDestroyWindow
-glfwDestroyWindow
-'knifunptr_cglfw27_glfwWindowShouldClose
-glfwWindowShouldClose
-*knifunptr_cglfw28_glfwSetWindowShouldClose
-glfwSetWindowShouldClose
-$knifunptr_cglfw29_glfwSetWindowTitle
-glfwSetWindowTitle
-	GLFWimage
-images
-#knifunptr_cglfw30_glfwSetWindowIcon
-glfwSetWindowIcon
-"knifunptr_cglfw31_glfwGetWindowPos
-glfwGetWindowPos
-"knifunptr_cglfw32_glfwSetWindowPos
-glfwSetWindowPos
-#knifunptr_cglfw33_glfwGetWindowSize
-glfwGetWindowSize
-minwidth
-	minheight
-maxwidth
-	maxheight
-)knifunptr_cglfw34_glfwSetWindowSizeLimits
-glfwSetWindowSizeLimits
-numer
-denom
-*knifunptr_cglfw35_glfwSetWindowAspectRatio
-glfwSetWindowAspectRatio
-#knifunptr_cglfw36_glfwSetWindowSize
-glfwSetWindowSize
-(knifunptr_cglfw37_glfwGetFramebufferSize
-glfwGetFramebufferSize
-left
-top
-right
-bottom
-(knifunptr_cglfw38_glfwGetWindowFrameSize
-glfwGetWindowFrameSize
-+knifunptr_cglfw39_glfwGetWindowContentScale
-glfwGetWindowContentScale
-&knifunptr_cglfw40_glfwGetWindowOpacity
-glfwGetWindowOpacity
-opacity
-&knifunptr_cglfw41_glfwSetWindowOpacity
-glfwSetWindowOpacity
-#knifunptr_cglfw42_glfwIconifyWindow
-glfwIconifyWindow
-#knifunptr_cglfw43_glfwRestoreWindow
-glfwRestoreWindow
-$knifunptr_cglfw44_glfwMaximizeWindow
-glfwMaximizeWindow
- knifunptr_cglfw45_glfwShowWindow
-glfwShowWindow
- knifunptr_cglfw46_glfwHideWindow
-glfwHideWindow
-!knifunptr_cglfw47_glfwFocusWindow
-glfwFocusWindow
-,knifunptr_cglfw48_glfwRequestWindowAttention
-glfwRequestWindowAttention
-&knifunptr_cglfw49_glfwGetWindowMonitor
-glfwGetWindowMonitor
-refreshRate
-&knifunptr_cglfw50_glfwSetWindowMonitor
-glfwSetWindowMonitor
-attrib
-%knifunptr_cglfw51_glfwGetWindowAttrib
-glfwGetWindowAttrib
-%knifunptr_cglfw52_glfwSetWindowAttrib
-glfwSetWindowAttrib
-*knifunptr_cglfw53_glfwSetWindowUserPointer
-glfwSetWindowUserPointer
-*knifunptr_cglfw54_glfwGetWindowUserPointer
-glfwGetWindowUserPointer
-	Function3
-GLFWwindowposfun
-*knifunptr_cglfw55_glfwSetWindowPosCallback
-glfwSetWindowPosCallback
-GLFWwindowsizefun
-+knifunptr_cglfw56_glfwSetWindowSizeCallback
-glfwSetWindowSizeCallback
-	Function1
-GLFWwindowclosefun
-,knifunptr_cglfw57_glfwSetWindowCloseCallback
-glfwSetWindowCloseCallback
-GLFWwindowrefreshfun
-.knifunptr_cglfw58_glfwSetWindowRefreshCallback
-glfwSetWindowRefreshCallback
-GLFWwindowfocusfun
-,knifunptr_cglfw59_glfwSetWindowFocusCallback
-glfwSetWindowFocusCallback
-GLFWwindowiconifyfun
-.knifunptr_cglfw60_glfwSetWindowIconifyCallback
-glfwSetWindowIconifyCallback
-GLFWwindowmaximizefun
-/knifunptr_cglfw61_glfwSetWindowMaximizeCallback
-glfwSetWindowMaximizeCallback
-GLFWframebuffersizefun
-0knifunptr_cglfw62_glfwSetFramebufferSizeCallback
-glfwSetFramebufferSizeCallback
-GLFWwindowcontentscalefun
-3knifunptr_cglfw63_glfwSetWindowContentScaleCallback
-!glfwSetWindowContentScaleCallback
- knifunptr_cglfw64_glfwPollEvents
-glfwPollEvents
- knifunptr_cglfw65_glfwWaitEvents
-glfwWaitEvents
-Double
-timeout
-'knifunptr_cglfw66_glfwWaitEventsTimeout
-glfwWaitEventsTimeout
-$knifunptr_cglfw67_glfwPostEmptyEvent
-glfwPostEmptyEvent
-mode
-"knifunptr_cglfw68_glfwGetInputMode
-glfwGetInputMode
-"knifunptr_cglfw69_glfwSetInputMode
-glfwSetInputMode
--knifunptr_cglfw70_glfwRawMouseMotionSupported
-glfwRawMouseMotionSupported
-key
-scancode
- knifunptr_cglfw71_glfwGetKeyName
-glfwGetKeyName
-$knifunptr_cglfw72_glfwGetKeyScancode
-glfwGetKeyScancode
-knifunptr_cglfw73_glfwGetKey
-
-glfwGetKey
-button
-$knifunptr_cglfw74_glfwGetMouseButton
-glfwGetMouseButton
-DoubleVarOf
-	DoubleVar
-"knifunptr_cglfw75_glfwGetCursorPos
-glfwGetCursorPos
-"knifunptr_cglfw76_glfwSetCursorPos
-glfwSetCursorPos
-image
-xhot
-yhot
-
-GLFWcursor
-"knifunptr_cglfw77_glfwCreateCursor
-glfwCreateCursor
-shape
-*knifunptr_cglfw78_glfwCreateStandardCursor
-glfwCreateStandardCursor
-cursor
-#knifunptr_cglfw79_glfwDestroyCursor
-glfwDestroyCursor
-knifunptr_cglfw80_glfwSetCursor
-glfwSetCursor
-	Function5
-
-GLFWkeyfun
-$knifunptr_cglfw81_glfwSetKeyCallback
-glfwSetKeyCallback
-UInt
-GLFWcharfun
-%knifunptr_cglfw82_glfwSetCharCallback
-glfwSetCharCallback
-GLFWcharmodsfun
-)knifunptr_cglfw83_glfwSetCharModsCallback
-glfwSetCharModsCallback
-	Function4
-GLFWmousebuttonfun
-,knifunptr_cglfw84_glfwSetMouseButtonCallback
-glfwSetMouseButtonCallback
-GLFWcursorposfun
-*knifunptr_cglfw85_glfwSetCursorPosCallback
-glfwSetCursorPosCallback
-GLFWcursorenterfun
-,knifunptr_cglfw86_glfwSetCursorEnterCallback
-glfwSetCursorEnterCallback
-GLFWscrollfun
-'knifunptr_cglfw87_glfwSetScrollCallback
-glfwSetScrollCallback
-CArrayPointer
-GLFWdropfun
-%knifunptr_cglfw88_glfwSetDropCallback
-glfwSetDropCallback
-jid
-%knifunptr_cglfw89_glfwJoystickPresent
-glfwJoystickPresent
-%knifunptr_cglfw90_glfwGetJoystickAxes
-glfwGetJoystickAxes
-
-UByteVarOf
-UByte
-UByteVar
-(knifunptr_cglfw91_glfwGetJoystickButtons
-glfwGetJoystickButtons
-%knifunptr_cglfw92_glfwGetJoystickHats
-glfwGetJoystickHats
-%knifunptr_cglfw93_glfwGetJoystickName
-glfwGetJoystickName
-%knifunptr_cglfw94_glfwGetJoystickGUID
-glfwGetJoystickGUID
-,knifunptr_cglfw95_glfwSetJoystickUserPointer
-glfwSetJoystickUserPointer
-,knifunptr_cglfw96_glfwGetJoystickUserPointer
-glfwGetJoystickUserPointer
-'knifunptr_cglfw97_glfwJoystickIsGamepad
-glfwJoystickIsGamepad
-GLFWjoystickfun
-)knifunptr_cglfw98_glfwSetJoystickCallback
-glfwSetJoystickCallback
-string
-+knifunptr_cglfw99_glfwUpdateGamepadMappings
-glfwUpdateGamepadMappings
-%knifunptr_cglfw100_glfwGetGamepadName
-glfwGetGamepadName
-GLFWgamepadstate
-state
-&knifunptr_cglfw101_glfwGetGamepadState
-glfwGetGamepadState
-)knifunptr_cglfw102_glfwSetClipboardString
-glfwSetClipboardString
-)knifunptr_cglfw103_glfwGetClipboardString
-glfwGetClipboardString
-knifunptr_cglfw104_glfwGetTime
-glfwGetTime
-time
-knifunptr_cglfw105_glfwSetTime
-glfwSetTime
-ULong
-platform
-posix
-uint64_t
-$knifunptr_cglfw106_glfwGetTimerValue
-glfwGetTimerValue
-(knifunptr_cglfw107_glfwGetTimerFrequency
-glfwGetTimerFrequency
-)knifunptr_cglfw108_glfwMakeContextCurrent
-glfwMakeContextCurrent
-(knifunptr_cglfw109_glfwGetCurrentContext
-glfwGetCurrentContext
-"knifunptr_cglfw110_glfwSwapBuffers
-glfwSwapBuffers
-interval
-#knifunptr_cglfw111_glfwSwapInterval
-glfwSwapInterval
-	extension
-)knifunptr_cglfw112_glfwExtensionSupported
-glfwExtensionSupported
-procname
-	Function0
-
-GLFWglproc
-%knifunptr_cglfw113_glfwGetProcAddress
-glfwGetProcAddress
-&knifunptr_cglfw114_glfwVulkanSupported
-glfwVulkanSupported
-	UIntVarOf
-uint32_tVar
-4knifunptr_cglfw115_glfwGetRequiredInstanceExtensions
-!glfwGetRequiredInstanceExtensions
-GLFW_VERSION_MAJOR
-GLFW_VERSION_MINOR
-GLFW_VERSION_REVISION
-	GLFW_TRUE
-
-GLFW_FALSE
-GLFW_RELEASE
-
-GLFW_PRESS
-GLFW_REPEAT
-GLFW_HAT_CENTERED
-GLFW_HAT_UP
-GLFW_HAT_RIGHT
-GLFW_HAT_DOWNÏ
- 
-  
-
-
-
- 
- 
- 
- 
- 
- 
- 
- 
- 
-  
- 
- 
-  
-$ 
- % 
-&
-' 
-,
--
-. 
-@ 
- A 
-B 
-L 
-M 
-P 
-S 
-[ 
- e 
-f 
-j 
-w 
- ∏ 
-π 
-º 
- ø 
-¿ 
-√ 
-∆ 
-… 
-Ã 
-œ 
-“ 
- Ÿ 
-Ò 
-Ú 
-˙ 
- Ö 
-Ü 
- â 
-ä 
-ç 
- ê 
-ë 
-î 
-ó 
-ö 
-ù 
-û 
-¶ 
- ß 
-® 
-∑ 
-ø 
- Ã 
-Õ
-EŒ
-Fœ 
- · 
-‚ 
-Á 
-FË ’K	0Há “
-(“
-0Há “
-(“
--02020Há “
-(“
-k0200	j`
-0200	j`
-0200	j`
-0Há “
-(“
-/00j`0Há “
-(“
-W#028!4.,00j`00j00j``0Há “
-("“
-ï*:.,(&000j`00000j`2>(:.,(&000j`00000j`Há “
-()“
-U0 
-000j0`02+00	j`
-0Há “
-(/“
-%2
-00Há “
-(1“
-a7023
-002400	j`
-02500	j`
-0Há “
-(6“
-ï;023
-002400	j`
-02500	j`
-02800	j`
-02900	j`
-0Há “
-(:“
-a?023
-002<00	j`
-02=00	j`
-0Há “
-(>“
-aF023
-002C00j`02D00j`0Há “
-(E“
-?H00j`023
-00Há “
-(G“
-;K023
-002I0Há “
-(J“
-=O00j`23
-00Há “
-(N“
-ÅR0$"
-0000000j`24(0$"
-0000000j`Há “
-(Q“
-OU
-0023
-002+00	j`
-0Há “
-(T“
-5W
-0023
-00Há “
-(V“
-5Z023
-002X0Há “
-(Y“
-5]
-0023
-00Há “
-(\“
-=`023
-002^
-00Há “
-(_“
-b0Há “
-(a“
--d02020Há “
-(c“
-6h02020 “
-!Há “
-(g“
-fm
-0"02802902i0 “
-!23
-002k
-0"0Há “
-(l“
--p02n
-0"0Há “
-(o“
--r02n
-0"0Há “
-(q“
-5t02n
-0"020Há “
-(s“
->v02n
-0"02i0 “
-!Há “
-(u“
-Ez02n
-0"02+02x
-0#0Há “
-(y“
-a|02n
-0"02400	j`
-02500	j`
-0Há “
-({“
-=~02n
-0"0240250Há “
-(}“
-bÄ02n
-0"02800	j`
-02900	j`
-0Há “
-(“
-SÜ02n
-0"02Å02Ç02É02Ñ0Há “
-	(Ö“
-Aä02n
-0"02á02à0Há “
-	(â“
-?å02n
-0"0280290Há “
-	(ã“
-cé02n
-0"02800	j`
-02900	j`
-0Há “
-	(ç“
-õî02n
-0"02è00	j`
-02ê00	j`
-02ë00	j`
-02í00	j`
-0Há “
-	(ì“
-cñ02n
-0"02C00j`02D00j`0Há “
-	(ï“
-/ò02n
-0"0Há “
-	(ó“
-8õ02n
-0"02ô0Há “
-	(ö“
-/ù02n
-0"0Há “
-	(ú“
-/ü02n
-0"0Há “
-	(û“
-/°02n
-0"0Há “
-	(†“
-/£02n
-0"0Há “
-	(¢“
-/•02n
-0"0Há “
-	(§“
-/ß02n
-0"0Há “
-	(¶“
-/©02n
-0"0Há “
-	(®“
-7´
-002n
-0"0Há “
-	(™“
-hÆ02n
-0"023
-002402502802902¨0Há “
-	(≠“
-8±02n
-0"02Ø0Há “
-	(∞“
-@≥02n
-0"02Ø020Há “
-	(≤“
-=µ02n
-0"02I0Há “
-	(¥“
-?∑00j`2n
-0"0Há “
-	(∂“
-üª6*($"
-0"00000$00j`%2n
-0"02:(6*($"
-0"00000$00j`%Há “
-	(∫“
-üæ6*($"
-0"00000$00j`&2n
-0"02:(6*($"
-0"00000$00j`&Há “
-	(Ω“
-á¬*
-0"000'00j`(2n
-0"02.(*
-0"000'00j`(Há “
-	(¡“
-á≈*
-0"000'00j`)2n
-0"02.(*
-0"000'00j`)Há “
-	(ƒ“
-ì»0$"
-0"000000j`*2n
-0"024(0$"
-0"000000j`*Há “
-	(«“
-ìÀ0$"
-0"000000j`+2n
-0"024(0$"
-0"000000j`+Há “
-	( “
-ìŒ0$"
-0"000000j`,2n
-0"024(0$"
-0"000000j`,Há “
-	(Õ“
-ü—6*($"
-0"00000$00j`-2n
-0"02:(6*($"
-0"00000$00j`-Há “
-	(–“
-ü‘6*($"
-0"00000$00j`.2n
-0"02:(6*($"
-0"00000$00j`.Há “
-	(”“
-÷0Há “
-	(’“
-ÿ0Há “
-	(◊“
-(‹02⁄0/Há “
-	(€“
-ﬁ0Há “
-	(›“
-8·02n
-0"02ﬂ0Há “
-	(‡“
-@„02n
-0"02ﬂ020Há “
-	(‚“
-Â0Há “
-	(‰“
-CÈ00j`02Ê02Á0Há “
-	(Ë“
-(Î02Ê0Há “
-	(Í“
-8Ì02n
-0"02Ê0Há “
-	(Ï“
-802n
-0"02Ó0Há “
-	(Ô“
-cÙ02n
-0"0240/00j`10250/00j`10Há “
-	(Û“
-?ˆ02n
-0"0240/250/Há “
-	(ı“
-J¸
-0202˜
-0#02¯02˘0Há “
-	(˚“
-0ˇ
-0202˝0Há “
-	(˛“
-0Ç02Ä
-020Há “
-	(Å“
-@Ñ02n
-0"02Ä
-020Há “
-	(É“
-∑àB640.
-0"0000000300j`42n
-0"02F(B640.
-0"0000000300j`4Há “
-	(á“
-ìå0$"
-0"0050000j`62n
-0"024(0$"
-0"0050000j`6Há “
-	(ã“
-üè6*($"
-0"005000$00j`72n
-0"02:(6*($"
-0"005000$00j`7Há “
-	(é“
-´ì<0.*(
-0"000000800j`92n
-0"02@(<0.*(
-0"000000800j`9Há “
-	(í“
-üñ6*($"
-0"00/0/00$00j`:2n
-0"02:(6*($"
-0"00/0/00$00j`:Há “
-	(ï“
-ìô0$"
-0"000000j`;2n
-0"024(0$"
-0"000000j`;Há “
-	(ò“
-üú6*($"
-0"00/0/00$00j`<2n
-0"02:(6*($"
-0"00/0/00$00j`<Há “
-	(õ“
-˙†¢ïíçä
-0"00lj.,00j`00j00j``0j4.,00j`00j00j```=00$00j`>2n
-0"02ß(¢ïíçä
-0"00lj.,00j`00j00j``0j4.,00j`00j00j```=00$00j`>Há “
-	(ü“
-(£02°0Há “
-	(¢“
-T•00j`02°02+00	j`
-0Há “
-	(§“
-T™0@0?j`A02°02+00	j`
-0Há “
-	(©“
-T¨0@0?j`A02°02+00	j`
-0Há “
-	(´“
-:Æ00j`02°0Há “
-	(≠“
-:∞00j`02°0Há “
-	(Ø“
-6≤02°02I0Há “
-	(±“
-8¥00j`2°0Há “
-	(≥“
-(∂02°0Há “
-	(µ“
-sπ(000000j`B2,((000000j`BHá “
-	(∏“
-1º02∫0 “
-!Há “
-	(ª“
-:æ00j`02°0Há “
-	(Ω“
-9¬02°02¿
-0C0Há “
-	(¡“
-Aƒ02n
-0"02∫0 “
-!Há “
-	(√“
-A∆00j`02n
-0"0Há “
-	(≈“
-»0/Há “
-	(«“
-(À02…0/Há “
-	( “
-#—0Dj`GHá “
-	(–“
-#”0Dj`GHá “
-	(““
-/’02n
-0"0Há “
-	(‘“
-'◊
-0"0Há “
-	(÷“
-/Ÿ02n
-0"0Há “
-	(ÿ“
-(‹02⁄0Há “
-	(€“
-1ﬂ02›0 “
-!Há “
-	(ﬁ“
-K‰
-00H00j`I2‡0 “
-!Há “
-	(„“
-Ê0Há “
-	(Â“
-kÍ4.,00j`00j00j``02+050Jj`K0Há “
-	(È“
-"Î08XáT“
-Í
-"Ï08XáT“
-Í
-"Ì08XáT“
-Í
-"Ó08XáT“
-Í
-"Ô08XáT“
-Í
- "08XáT“
-Í
- "Ò08XáT“
-Í
-"Ú08XáT“
-Í
-"Û08XáT“
-Í
- "Ù08XáT“
-Í
-"ı08XáT“
-Í
-"ˆ08XáT“
-Í
-ÿ
-‡
- Í
-cglfw

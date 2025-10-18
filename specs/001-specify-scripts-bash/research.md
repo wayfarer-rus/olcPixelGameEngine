@@ -60,4 +60,6 @@
 - Follow-up executed: `./gradlew :demos:sample_app:runSampleAppReleaseExecutableMacosX64` and
   `./gradlew :games:pixel_shooter:runPixelShooterGameReleaseExecutableMacosX64` built and linked; run steps skipped by
   Gradle due to headless environment.
+- Native run tasks now depend on resource copy steps that stage assets next to the built executable (see Gradle root
+  build logic).
 
