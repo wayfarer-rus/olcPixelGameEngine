@@ -9,9 +9,13 @@ All credit goes to https://github.com/OneLoneCoder
 Huge thanks to the awesome dude who created this: https://github.com/Dominaezzz/kgl
 
 # How to build?
-You have to have gradle tool installed.
 
-You have to have GLFW installed. Call `brew install glfw` on Mac; `apt install glfw` on Ubuntu
+Use the bundled Gradle wrapper (`./gradlew`) so the correct Kotlin/Native toolchain is selected.
+
+Install GLFW before building. Call `brew install glfw` on macOS or `apt install glfw` on Ubuntu.
+
+Build artifacts target the host platform (macOS, Linux, Windows). Ensure `MINGW64_DIR` points to a valid MinGW64 path
+when building on Windows.
 
 ## Install GLFW on Windows
 Download and install [msys2](https://www.msys2.org/)
@@ -23,19 +27,68 @@ When I added it directly into Windows Environment, linking of the project starte
 So, I tried to add it in project configuration, like `Path=c:\msys64\mingw64\bin\\;%Path%` and it works like that. 
 
 ## Assemble and Run
-Just do `gradle assemble` or `gradle runOlcGameEnginePortSampleAppReleaseExecutableOlcGameEnginePort`
 
-Assemble will create executable in `build/bin` catalog. And second command will run sample app.
+Build everything:
 
-Couple of demo apps also available and can be directly compiled and run from cmd:
-- Fireworks demo:
-    `gradle runFireworksDemoReleaseExecutableOlcGameEnginePort`
-- Asteroids demo:
-    `gradle runAsteroidsDemoReleaseExecutableOlcGameEnginePort`  
-- Crude Breakout demo:
-    `gradle runFireworksDemoReleaseExecutableOlcGameEnginePort`
-- [Boids](https://en.wikipedia.org/wiki/Boids) demo:
-    `gradle runBoidsDemoReleaseExecutableOlcGameEnginePort`
+```
+./gradlew assemble
+```
+
+Build the reusable engine library only:
+
+```
+./gradlew :engine:assemble
+```
+
+Run the sample app:
+
+```
+./gradlew :demos:sample_app:runSampleAppReleaseExecutableMacosX64
+```
+
+Each demo now lives in its own module under `demos/*`. Launch them with the corresponding Gradle task:
+
+| Demo                | Command                                                                                  |
+|---------------------|------------------------------------------------------------------------------------------|
+| Fireworks           | `./gradlew :demos:fireworks:runFireworksDemoReleaseExecutableMacosX64`                   |
+| Asteroids           | `./gradlew :demos:asteroids:runAsteroidsDemoReleaseExecutableMacosX64`                   |
+| Breakout            | `./gradlew :demos:breakout:runBreakoutDemoReleaseExecutableMacosX64`                     |
+| Boids               | `./gradlew :demos:boids:runBoidsDemoReleaseExecutableMacosX64`                           |
+| Destructible Blocks | `./gradlew :demos:destructible_sprite:runDestructibleBlockDemoReleaseExecutableMacosX64` |
+| Balls               | `./gradlew :demos:balls:runBallsDemoReleaseExecutableMacosX64`                           |
+| Mandelbrot          | `./gradlew :demos:mandelbrot:runMandelbrotDemoReleaseExecutableMacosX64`                 |
+| Sort-of Bejewelled  | `./gradlew :demos:bejewelled:runBejewelledDemoReleaseExecutableMacosX64`                 |
+| Dungeon Warping     | `./gradlew :demos:dungeon_warping:runDungeonWarpingDemoReleaseExecutableMacosX64`        |
+
+The pixel shooter game now lives under `games/pixel_shooter`:
+
+```
+./gradlew :games:pixel_shooter:runPixelShooterGameReleaseExecutableMacosX64
+```
+
+All build outputs land in `build/bin/<module>/` for the selected target.
+
+*Run task suffixes reflect the host target (e.g., `MacosX64`). Adjust the suffix for your platform when executing these
+commands.*
+
+## Project Layout
+
+```
+engine/             # Shared engine library (Kotlin/Native)
+demos/              # Individual demo executables
+  fireworks/
+  asteroids/
+  breakout/
+  boids/
+  destructible_sprite/
+  balls/
+  mandelbrot/
+  bejewelled/
+  sample_app/
+  dungeon_warping/
+  shared-assets/
+games/              # Game executables (pixel shooter, etc.)
+```
 
 # Disclaimer
 ~~Performance is shit =)~~ 

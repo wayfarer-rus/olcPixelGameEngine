@@ -2,19 +2,21 @@
 
 ## Project Structure & Module Organization
 
-Core Kotlin/Native engine sources live in `src/olcGameEnginePortMain/kotlin`, with demo entry points grouped under
-`demos.*`. Shared assets ship from `src/olcGameEnginePortMain/resources`. Tests and sample sprites reside in
-`src/olcGameEnginePortTest/{kotlin,resources}`. Native interop definitions stay inside `src/nativeInterop/cinterop`; add
-platform headers or `.def` files there so Gradle can wire GLFW correctly. Gradle builds write artifacts to `build/`,
-with host executables under `build/bin/olcGameEnginePort`.
+Core Kotlin/Native engine sources now live in `engine/src/nativeMain/kotlin/olc`, packaged as a reusable library module.
+Each demo is isolated under `demos/<name>/src/nativeMain/kotlin`, and the pixel shooter game sits in
+`games/pixel_shooter/src/nativeMain/kotlin`. Shared sprite or texture assets belong in the `demos/shared-assets`
+module (`src/nativeMain/resources`). Engine tests and fixtures reside in `engine/src/nativeTest/{kotlin,resources}`.
+Native interop definitions (e.g., GLFW) ship with the engine library at `engine/src/nativeInterop/cinterop`.
+Gradle builds write module-specific artifacts to `build/bin/<module>/`.
 
 ## Build, Test, and Development Commands
 
-Use the wrapper (`./gradlew`) to pick the right Kotlin/Native toolchain. `./gradlew assemble` compiles the engine and
-demos, dropping binaries in `build/bin`. `./gradlew runOlcGameEnginePortSampleAppReleaseExecutableOlcGameEnginePort`
-launches the sample app; substitute `FireworksDemo`, `AsteroidsDemo`, `BoidsDemo`, or `BallsDemo` to run other demos.
-`./gradlew check` runs the host test suite; add `--info` when triaging native assertion failures. Install GLFW before
-building (`brew install glfw` on macOS, `apt install glfw` on Ubuntu, `MINGW64_DIR` on Windows).
+Use the wrapper (`./gradlew`) to pick the right Kotlin/Native toolchain. `./gradlew assemble` builds every module.
+`./gradlew :engine:assemble` compiles the shared engine library. Run demos with
+`./gradlew :demos:<name>:run<BinaryName>ReleaseExecutable<HostTarget>` and the pixel shooter with
+`./gradlew :games:pixel_shooter:runPixelShooterGameReleaseExecutable<HostTarget>`. Install GLFW before building (
+`brew install glfw`
+on macOS, `apt install glfw` on Ubuntu, `MINGW64_DIR` on Windows).
 
 ## Coding Style & Naming Conventions
 
@@ -26,10 +28,11 @@ practice.
 
 ## Testing Guidelines
 
-Host tests rely on `kotlin.test` and live in the `olc.game_engine` test package. Write scenario-focused tests (
-`SpriteImplTest`, `PixelGameEngineTest`) that exercise draw paths without hitting platform OpenGL. Name tests with
-`test<Feature>` and use the in-memory fixtures in `src/olcGameEnginePortTest/resources`. Run them via
-`./gradlew check` (or the IDE Kotlin/Native test runner) before pushing.
+Host tests rely on `kotlin.test` and live in the `olc.game_engine` package under `engine/src/nativeTest/kotlin`. Write
+scenario-focused tests (`SpriteImplTest`, `PixelGameEngineTest`) that exercise draw paths without hitting platform
+OpenGL. Name tests with `test<Feature>` and use the in-memory fixtures in `engine/src/nativeTest/resources`. Run them
+via
+`./gradlew :engine:check` (or the IDE Kotlin/Native test runner) before pushing.
 
 ## Commit & Pull Request Guidelines
 
