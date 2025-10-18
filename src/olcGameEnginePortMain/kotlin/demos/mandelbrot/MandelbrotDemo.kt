@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalAtomicApi::class)
+
 package demos.mandelbrot
 
 import kotlinx.coroutines.coroutineScope
@@ -7,12 +9,13 @@ import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import olc.game_engine.*
-import kotlin.native.concurrent.AtomicInt
+import kotlin.concurrent.atomics.AtomicInt
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.native.concurrent.Future
 import kotlin.native.concurrent.TransferMode
 import kotlin.native.concurrent.Worker
 import kotlin.properties.Delegates
-import kotlin.system.getTimeNanos
+import kotlin.time.TimeSource
 
 class MandelbrotDemo : PixelGameEngineImpl() {
     override val appName = "Mandelbrot Set"
@@ -52,10 +55,10 @@ class MandelbrotDemo : PixelGameEngineImpl() {
         val mousePos = Vi2d(getMouseX(), getMouseY())
         setDrawTarget(0)
 
-        val time = if (calculationFinished.value == 1) {
-            val t = getTimeNanos()
+        val time = if (calculationFinished.load() == 1) {
+            val mark = TimeSource.Monotonic.markNow()
             calculateMandelbrotAsync()
-            (getTimeNanos() - t).toDouble() / 1_000_000_000
+            mark.elapsedNow().inWholeNanoseconds.toDouble() / 1_000_000_000
         } else {
             0.0
         }
@@ -127,12 +130,12 @@ class MandelbrotDemo : PixelGameEngineImpl() {
     private fun calculateMandelbrotAsync(): Future<Unit> {
         return asyncWorker.execute(TransferMode.UNSAFE, {
             {
-                calculationFinished.value = 0
+                calculationFinished.store(0)
                 when (type) {
                     0 -> calculate(Vi2d(0, 0), Vi2d(sprite.width, sprite.height), iterations)
                     3 -> calculateWithThreads(Vi2d(0, 0), Vi2d(sprite.width, sprite.height), iterations)
                 }
-                calculationFinished.value = 1
+                calculationFinished.store(1)
             }
         }) {
             it()

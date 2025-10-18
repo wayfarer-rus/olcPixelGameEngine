@@ -43,3 +43,5 @@ enum class RetCode(val c: Int) {
     OK(1),
     NO_FILE(-1)
 }
+
+typealias rcode = RetCode

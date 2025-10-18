@@ -4,8 +4,7 @@ import cglfw.*
 import cnames.structs.GLFWwindow
 import kotlinx.cinterop.*
 import platform.OpenGL3.*
-import kotlin.math.abs
-import kotlin.math.roundToInt
+import kotlin.math.*
 import kotlin.time.TimeSource
 
 // Shaders for texture mapping. Work in conjunction with 'vertexBufferData' in EngineThread
@@ -90,12 +89,15 @@ interface PixelGameEngine {
 
     fun onUserCreate(): Boolean
     fun onUserUpdate(elapsedTime: Float): Boolean
-//    fun onUserDestroy(): Boolean
+    fun onUserDestroy() {
+        // optional override hook
+    }
 
     fun isFocused(): Boolean
     fun isMouseInWindow(): Boolean
     fun getKey(k: Key): HWButton
     fun getMouseKey(b: Int): HWButton
+    fun getMouse(b: Int): HWButton = getMouseKey(b)
     fun getMouseX(): Int
     fun getMouseY(): Int
     fun getMouseWheel(): Int
@@ -105,9 +107,9 @@ interface PixelGameEngine {
     fun getDrawTargetHeight(): Int
     fun getDrawTarget(): Sprite
     fun setDrawTarget(target: Sprite)
+    fun setDrawTarget(layer: Int)
     fun resetDrawTarget()
     fun setPixelMode(m: Pixel.Mode)
-    // fun SetPixelMode(fun)
     fun getPixelMode(): Pixel.Mode
 
     fun setPixelBlend(blend: Float)
@@ -117,14 +119,82 @@ interface PixelGameEngine {
 
     fun drawLine(start: Pair<Int, Int>, end: Pair<Int, Int>, p: Pixel = Pixel.WHITE, pattern: UInt = 0xFFFFFFFFu)
     fun drawCircle(x: Int, y: Int, radius: Int, p: Pixel = Pixel.WHITE, mask: UByte = 0xFFu)
+    fun drawCircle(pos: Vi2d, radius: Int, p: Pixel = Pixel.WHITE, mask: UByte = 0xFFu) =
+        drawCircle(pos.x, pos.y, radius, p, mask)
     fun fillCircle(x: Int, y: Int, radius: Int, p: Pixel = Pixel.WHITE)
     fun drawRect(x: Int, y: Int, w: Int, h: Int, p: Pixel = Pixel.WHITE)
+    fun drawRect(pos: Vi2d, size: Vi2d, p: Pixel = Pixel.WHITE) = drawRect(pos.x, pos.y, size.x, size.y, p)
     fun fillRect(x: Int, y: Int, w: Int, h: Int, p: Pixel = Pixel.WHITE)
+    fun fillRect(pos: Vi2d, size: Vi2d, p: Pixel = Pixel.WHITE) = fillRect(pos.x, pos.y, size.x, size.y, p)
     fun drawTriangle(point1: Pair<Int, Int>, point2: Pair<Int, Int>, point3: Pair<Int, Int>, p: Pixel = Pixel.WHITE)
     fun fillTriangle(point1: Pair<Int, Int>, point2: Pair<Int, Int>, point3: Pair<Int, Int>, p: Pixel = Pixel.WHITE)
     fun drawSprite(x: Int, y: Int, sprite: Sprite, scale: Int = 1)
+    fun drawSprite(pos: Vi2d, sprite: Sprite, scale: Int = 1) = drawSprite(pos.x, pos.y, sprite, scale)
     fun drawPartialSprite(x: Int, y: Int, sprite: Sprite, ox: Int, oy: Int, w: Int, h: Int, scale: Int = 1)
     fun drawString(x: Int, y: Int, text: String, col: Pixel = Pixel.WHITE, scale: Int = 1)
+    fun drawString(pos: Vi2d, text: String, col: Pixel = Pixel.WHITE, scale: Int = 1) =
+        drawString(pos.x, pos.y, text, col, scale)
+
+    fun drawDecal(pos: Vf2d, decal: Decal, scale: Vf2d = Vf2d(1.0f, 1.0f), tint: Pixel = Pixel.WHITE)
+
+    fun drawPartialDecal(
+        pos: Vf2d,
+        decal: Decal,
+        source_pos: Vf2d,
+        source_size: Vf2d,
+        scale: Vf2d = Vf2d(1.0f, 1.0f),
+        tint: Pixel = Pixel.WHITE
+    )
+
+    fun drawWarpedDecal(decal: Decal, pos: Array<Vf2d>, tint: Pixel = Pixel.WHITE)
+    fun drawWarpedDecal(decal: Decal, pos: List<Vf2d>, tint: Pixel = Pixel.WHITE) =
+        drawWarpedDecal(decal, pos.toTypedArray(), tint)
+
+    fun drawRotatedDecal(
+        pos: Vf2d,
+        decal: Decal,
+        angle: Float,
+        center: Vf2d = Vf2d(0.0f, 0.0f),
+        scale: Vf2d = Vf2d(1.0f, 1.0f),
+        tint: Pixel = Pixel.WHITE
+    )
+
+    fun drawStringDecal(pos: Vf2d, text: String, col: Pixel = Pixel.WHITE, scale: Vf2d = Vf2d(1.0f, 1.0f))
+
+    fun drawPartialRotatedDecal(
+        pos: Vf2d,
+        decal: Decal,
+        angle: Float,
+        center: Vf2d,
+        source_pos: Vf2d,
+        source_size: Vf2d,
+        scale: Vf2d = Vf2d(1.0f, 1.0f),
+        tint: Pixel = Pixel.WHITE
+    )
+
+    fun drawPartialWarpedDecal(
+        decal: Decal,
+        pos: Array<Vf2d>,
+        source_pos: Vf2d,
+        source_size: Vf2d,
+        tint: Pixel = Pixel.WHITE
+    )
+
+    fun drawPartialWarpedDecal(
+        decal: Decal,
+        pos: List<Vf2d>,
+        source_pos: Vf2d,
+        source_size: Vf2d,
+        tint: Pixel = Pixel.WHITE
+    ) = drawPartialWarpedDecal(decal, pos.toTypedArray(), source_pos, source_size, tint)
+
+    fun createDecal(sprite: Sprite): Decal
+    fun updateDecal(decal: Decal): Decal
+    fun deleteDecal(decal: Decal)
+
+    fun createLayer(): Int
+    fun deleteLayer(layerId: Int)
+
     fun clear(p: Pixel = Pixel.BLACK)
     fun getFPS(): Int
 }
@@ -145,8 +215,15 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
         if (nPixelWidth <= 0 || nPixelHeight <= 0 || nScreenWidth <= 0 || nScreenHeight <= 0)
             return rcode.FAIL
 
+        decals.clear()
+        nextDecalId = 1u
+        layers.clear()
+        layerVisible.clear()
+        currentLayerIndex = -1
+        fontDecal = null
         olcConstructFontsheet()
         pDefaultDrawTarget = Sprite(nScreenWidth, nScreenHeight)
+        compositedFrame = UIntArray(pDefaultDrawTarget.data.size)
         setDrawTarget(pDefaultDrawTarget)
         return rcode.OK
     }
@@ -169,6 +246,7 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
         if (onUserCreate()) {
             bAtomActive = 1
             engineMainLoop()
+            onUserDestroy()
         }
 
         window?.let { glfwDestroyWindow(it) }
@@ -179,10 +257,26 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
 
     // Utility methods and flow control
     override fun setDrawTarget(target: Sprite) {
+        currentLayerIndex = -1
         pDrawTarget = target
     }
 
+    override fun setDrawTarget(layer: Int) {
+        if (layer == 0) {
+            currentLayerIndex = -1
+            pDrawTarget = pDefaultDrawTarget
+            return
+        }
+        val idx = layer - 1
+        if (idx in layers.indices) {
+            currentLayerIndex = idx
+            layerVisible[idx] = true
+            pDrawTarget = layers[idx]
+        }
+    }
+
     override fun resetDrawTarget() {
+        currentLayerIndex = -1
         pDrawTarget = pDefaultDrawTarget
     }
 
@@ -585,6 +679,339 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
         }
     }
 
+    override fun drawDecal(pos: Vf2d, decal: Decal, scale: Vf2d, tint: Pixel) {
+        drawPartialDecal(
+            pos = pos,
+            decal = decal,
+            source_pos = Vf2d(0f, 0f),
+            source_size = Vf2d(decal.sprite.width.toFloat(), decal.sprite.height.toFloat()),
+            scale = scale,
+            tint = tint
+        )
+    }
+
+    override fun drawPartialDecal(
+        pos: Vf2d,
+        decal: Decal,
+        source_pos: Vf2d,
+        source_size: Vf2d,
+        scale: Vf2d,
+        tint: Pixel
+    ) {
+        val sprite = decal.sprite
+        if (sprite.width == 0 || sprite.height == 0) return
+        val srcX = source_pos.x.toInt()
+        val srcY = source_pos.y.toInt()
+        val srcW = source_size.x.toInt()
+        val srcH = source_size.y.toInt()
+        if (srcW <= 0 || srcH <= 0) return
+
+        val scaleX = if (scale.x == 0f) 1f else scale.x
+        val scaleY = if (scale.y == 0f) 1f else scale.y
+        val absScaleX = abs(scaleX)
+        val absScaleY = abs(scaleY)
+        val destWidth = max(1, ceil(srcW * absScaleX.toDouble()).toInt())
+        val destHeight = max(1, ceil(srcH * absScaleY.toDouble()).toInt())
+        val invScaleX = 1f / absScaleX
+        val invScaleY = 1f / absScaleY
+        val originX = pos.x
+        val originY = pos.y
+        val dirX = sign(scaleX).takeIf { it != 0f } ?: 1f
+        val dirY = sign(scaleY).takeIf { it != 0f } ?: 1f
+
+        for (dy in 0 until destHeight) {
+            val srcRow = srcY + floor((dy * invScaleY).toDouble()).toInt()
+            if (srcRow !in srcY until (srcY + srcH)) continue
+            val destY = floor((originY + dy * dirY).toDouble()).toInt()
+            for (dx in 0 until destWidth) {
+                val srcCol = srcX + floor((dx * invScaleX).toDouble()).toInt()
+                if (srcCol !in srcX until (srcX + srcW)) continue
+                val destX = floor((originX + dx * dirX).toDouble()).toInt()
+                val pixel = sprite.getPixel(srcCol, srcRow) ?: continue
+                if (pixel.a.toInt() == 0) continue
+                draw(destX, destY, applyTint(pixel, tint))
+            }
+        }
+    }
+
+    override fun drawRotatedDecal(
+        pos: Vf2d,
+        decal: Decal,
+        angle: Float,
+        center: Vf2d,
+        scale: Vf2d,
+        tint: Pixel
+    ) {
+        drawTransformedDecal(
+            pos = pos,
+            decal = decal,
+            angle = angle,
+            center = center,
+            source_pos = Vf2d(0f, 0f),
+            source_size = Vf2d(decal.sprite.width.toFloat(), decal.sprite.height.toFloat()),
+            scale = scale,
+            tint = tint
+        )
+    }
+
+    override fun drawPartialRotatedDecal(
+        pos: Vf2d,
+        decal: Decal,
+        angle: Float,
+        center: Vf2d,
+        source_pos: Vf2d,
+        source_size: Vf2d,
+        scale: Vf2d,
+        tint: Pixel
+    ) {
+        drawTransformedDecal(pos, decal, angle, center, source_pos, source_size, scale, tint)
+    }
+
+    override fun drawWarpedDecal(decal: Decal, pos: Array<Vf2d>, tint: Pixel) {
+        drawWarpedDecalInternal(
+            decal = decal,
+            dest = pos,
+            source_pos = Vf2d(0f, 0f),
+            source_size = Vf2d(decal.sprite.width.toFloat(), decal.sprite.height.toFloat()),
+            tint = tint
+        )
+    }
+
+    override fun drawPartialWarpedDecal(
+        decal: Decal,
+        pos: Array<Vf2d>,
+        source_pos: Vf2d,
+        source_size: Vf2d,
+        tint: Pixel
+    ) {
+        drawWarpedDecalInternal(decal, pos, source_pos, source_size, tint)
+    }
+
+    override fun drawStringDecal(pos: Vf2d, text: String, col: Pixel, scale: Vf2d) {
+        val fontDecalLocal = fontDecal
+        if (fontDecalLocal == null) {
+            drawString(
+                pos.x.roundToInt(),
+                pos.y.roundToInt(),
+                text,
+                col,
+                max(scale.x, scale.y).roundToInt().coerceAtLeast(1)
+            )
+            return
+        }
+        var cursor = Vf2d(0f, 0f)
+        text.forEach { c ->
+            if (c == '\n') {
+                cursor = Vf2d(0f, cursor.y + 8f * scale.y)
+            } else if (c.code >= 32 && c.code <= 127) {
+                val ox = (c.code - 32) % 16
+                val oy = (c.code - 32) / 16
+                drawPartialDecal(
+                    pos = pos + cursor,
+                    decal = fontDecalLocal,
+                    source_pos = Vf2d(ox * 8f, oy * 8f),
+                    source_size = Vf2d(8f, 8f),
+                    scale = scale,
+                    tint = col
+                )
+                cursor = Vf2d(cursor.x + 8f * scale.x, cursor.y)
+            }
+        }
+    }
+
+    override fun createDecal(sprite: Sprite): Decal {
+        val uvScale = Vf2d(
+            if (sprite.width != 0) 1.0f / sprite.width.toFloat() else 0f,
+            if (sprite.height != 0) 1.0f / sprite.height.toFloat() else 0f
+        )
+        val decal = Decal(nextDecalId++, sprite, uvScale)
+        decals[decal.id] = decal
+        return decal
+    }
+
+    override fun updateDecal(decal: Decal): Decal {
+        decal.dirty = true
+        decals[decal.id] = decal
+        return decal
+    }
+
+    override fun deleteDecal(decal: Decal) {
+        decals.remove(decal.id)
+    }
+
+    override fun createLayer(): Int {
+        val sprite = Sprite(nScreenWidth, nScreenHeight)
+        layers.add(sprite)
+        layerVisible.add(true)
+        return layers.size // zero is reserved for default layer
+    }
+
+    override fun deleteLayer(layerId: Int) {
+        if (layerId <= 0) return
+        val idx = layerId - 1
+        if (idx !in layers.indices) return
+        layers.removeAt(idx)
+        layerVisible.removeAt(idx)
+        when {
+            currentLayerIndex == idx -> resetDrawTarget()
+            currentLayerIndex > idx -> currentLayerIndex--
+        }
+    }
+
+    private fun drawTransformedDecal(
+        pos: Vf2d,
+        decal: Decal,
+        angle: Float,
+        center: Vf2d,
+        source_pos: Vf2d,
+        source_size: Vf2d,
+        scale: Vf2d,
+        tint: Pixel
+    ) {
+        val sprite = decal.sprite
+        if (sprite.width == 0 || sprite.height == 0) return
+        if (source_size.x <= 0f || source_size.y <= 0f) return
+
+        val scaleX = if (scale.x == 0f) 1f else scale.x
+        val scaleY = if (scale.y == 0f) 1f else scale.y
+        val absScaleX = abs(scaleX)
+        val absScaleY = abs(scaleY)
+        val invScaleX = 1f / scaleX
+        val invScaleY = 1f / scaleY
+        val cosA = cos(angle)
+        val sinA = sin(angle)
+        val destWidth = max(1, ceil(source_size.x * absScaleX.toDouble()).toInt())
+        val destHeight = max(1, ceil(source_size.y * absScaleY.toDouble()).toInt())
+        val scaledCenter = Vf2d(center.x * scaleX, center.y * scaleY)
+        val destOriginX = pos.x - scaledCenter.x
+        val destOriginY = pos.y - scaledCenter.y
+
+        for (dy in 0 until destHeight) {
+            val screenY = destOriginY + dy
+            val destY = floor(screenY.toDouble()).toInt()
+            for (dx in 0 until destWidth) {
+                val screenX = destOriginX + dx
+                val destX = floor(screenX.toDouble()).toInt()
+                val relX = screenX - pos.x
+                val relY = screenY - pos.y
+                val localX = (relX * cosA + relY * sinA) * invScaleX + center.x
+                val localY = (-relX * sinA + relY * cosA) * invScaleY + center.y
+                if (localX < 0f || localX >= source_size.x || localY < 0f || localY >= source_size.y) continue
+                val srcX = floor((source_pos.x + localX).toDouble()).toInt()
+                val srcY = floor((source_pos.y + localY).toDouble()).toInt()
+                if (srcX !in 0 until sprite.width || srcY !in 0 until sprite.height) continue
+                val pixel = sprite.getPixel(srcX, srcY) ?: continue
+                if (pixel.a.toInt() == 0) continue
+                draw(destX, destY, applyTint(pixel, tint))
+            }
+        }
+    }
+
+    private fun drawWarpedDecalInternal(
+        decal: Decal,
+        dest: Array<Vf2d>,
+        source_pos: Vf2d,
+        source_size: Vf2d,
+        tint: Pixel
+    ) {
+        val sprite = decal.sprite
+        if (dest.size < 4 || sprite.width == 0 || sprite.height == 0) return
+        if (source_size.x <= 0f || source_size.y <= 0f) return
+
+        val spriteWidth = sprite.width.toFloat()
+        val spriteHeight = sprite.height.toFloat()
+        val uv = arrayOf(
+            Vf2d(source_pos.x / spriteWidth, source_pos.y / spriteHeight),
+            Vf2d(source_pos.x / spriteWidth, (source_pos.y + source_size.y) / spriteHeight),
+            Vf2d((source_pos.x + source_size.x) / spriteWidth, (source_pos.y + source_size.y) / spriteHeight),
+            Vf2d((source_pos.x + source_size.x) / spriteWidth, source_pos.y / spriteHeight)
+        )
+
+        val minX = floor(dest.minOf { it.x }.toDouble()).toInt()
+        val maxX = ceil(dest.maxOf { it.x }.toDouble()).toInt()
+        val minY = floor(dest.minOf { it.y }.toDouble()).toInt()
+        val maxY = ceil(dest.maxOf { it.y }.toDouble()).toInt()
+
+        drawWarpedTriangle(sprite, dest[0], dest[1], dest[2], uv[0], uv[1], uv[2], tint, minX, maxX, minY, maxY)
+        drawWarpedTriangle(sprite, dest[0], dest[2], dest[3], uv[0], uv[2], uv[3], tint, minX, maxX, minY, maxY)
+    }
+
+    private fun drawWarpedTriangle(
+        sprite: Sprite,
+        p0: Vf2d,
+        p1: Vf2d,
+        p2: Vf2d,
+        uv0: Vf2d,
+        uv1: Vf2d,
+        uv2: Vf2d,
+        tint: Pixel,
+        minX: Int,
+        maxX: Int,
+        minY: Int,
+        maxY: Int
+    ) {
+        val area = (p1.x - p0.x) * (p2.y - p0.y) - (p2.x - p0.x) * (p1.y - p0.y)
+        if (abs(area) < 1e-6f) return
+
+        for (y in minY..maxY) {
+            for (x in minX..maxX) {
+                val bary = barycentric(p0, p1, p2, x + 0.5f, y + 0.5f) ?: continue
+                val u = uv0.x * bary.first + uv1.x * bary.second + uv2.x * bary.third
+                val v = uv0.y * bary.first + uv1.y * bary.second + uv2.y * bary.third
+
+                val sampleX = floor((u * sprite.width).toDouble()).toInt()
+                val sampleY = floor((v * sprite.height).toDouble()).toInt()
+                if (sampleX !in 0 until sprite.width || sampleY !in 0 until sprite.height) continue
+
+                val pixel = sprite.getPixel(sampleX, sampleY) ?: continue
+                if (pixel.a.toInt() == 0) continue
+                draw(x, y, applyTint(pixel, tint))
+            }
+        }
+    }
+
+    private fun barycentric(p0: Vf2d, p1: Vf2d, p2: Vf2d, px: Float, py: Float): Triple<Float, Float, Float>? {
+        val denom = (p1.y - p2.y) * (p0.x - p2.x) + (p2.x - p1.x) * (p0.y - p2.y)
+        if (abs(denom) < 1e-6f) return null
+        val w1 = ((p1.y - p2.y) * (px - p2.x) + (p2.x - p1.x) * (py - p2.y)) / denom
+        val w2 = ((p2.y - p0.y) * (px - p2.x) + (p0.x - p2.x) * (py - p2.y)) / denom
+        val w3 = 1f - w1 - w2
+        if (w1 < 0f || w2 < 0f || w3 < 0f) return null
+        return Triple(w1, w2, w3)
+    }
+
+    private fun applyTint(source: Pixel, tint: Pixel): Pixel {
+        if (tint == Pixel.WHITE) return source
+        val r = (source.rf * tint.rf / 255f).roundToInt().coerceIn(0, 255)
+        val g = (source.gf * tint.gf / 255f).roundToInt().coerceIn(0, 255)
+        val b = (source.bf * tint.bf / 255f).roundToInt().coerceIn(0, 255)
+        val a = (source.af * tint.af / 255f).roundToInt().coerceIn(0, 255)
+        return Pixel(r, g, b, a)
+    }
+
+    private fun buildFrameBuffer(): UIntArray {
+        if (compositedFrame.size != pDefaultDrawTarget.data.size) {
+            compositedFrame = UIntArray(pDefaultDrawTarget.data.size)
+        }
+        pDefaultDrawTarget.data.copyInto(compositedFrame)
+        for (index in layers.indices) {
+            if (index >= layerVisible.size) continue
+            if (!layerVisible[index]) continue
+            blendLayerIntoFrame(layers[index], compositedFrame)
+        }
+        return compositedFrame
+    }
+
+    private fun blendLayerIntoFrame(layerSprite: Sprite, target: UIntArray) {
+        val src = layerSprite.data
+        for (idx in src.indices) {
+            val pixel = Pixel(src[idx])
+            if (pixel.a.toInt() == 0) continue
+            target[idx] = pixel.n
+        }
+    }
+
+
     // main loop
     private fun engineMainLoop() {
         println("EngineThread() called")
@@ -657,7 +1084,8 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
             glActiveTexture(GL_TEXTURE0.toUInt())
             glBindTexture(GL_TEXTURE_2D.toUInt(), glBuffer)
 
-            pDrawTarget.data.usePinned {
+            val frame = buildFrameBuffer()
+            frame.usePinned {
                 glTexSubImage2D(
                     GL_TEXTURE_2D.toUInt(),
                     0,
@@ -691,8 +1119,6 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
                 nFrameCount = 0
             }
         } while (glfwWindowShouldClose(windowPtr) == GLFW_FALSE && bAtomActive == 1)
-
-//        onUserDestroy()
 
         println("EngineThread() return")
     }
@@ -973,6 +1399,8 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
                 }
             }
         }
+
+        fontDecal = createDecal(fontSprite)
     }
 
     private fun olcLoadShaders(): UInt {
@@ -1018,6 +1446,13 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
     private var glBuffer = 0u
     private lateinit var pDefaultDrawTarget: Sprite
     private lateinit var pDrawTarget: Sprite
+    private val decals = mutableMapOf<UInt, Decal>()
+    private var nextDecalId: UInt = 1u
+    private val layers: MutableList<Sprite> = mutableListOf()
+    private val layerVisible: MutableList<Boolean> = mutableListOf()
+    private var currentLayerIndex: Int = -1
+    private var compositedFrame: UIntArray = UIntArray(0)
+    private var fontDecal: Decal? = null
     private var nPixelMode = Pixel.Mode.NORMAL
     private var fBlendFactor: Float = 1.0f
     private var nScreenWidth: Int = 256

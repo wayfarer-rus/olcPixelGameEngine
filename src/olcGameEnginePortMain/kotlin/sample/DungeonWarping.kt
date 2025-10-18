@@ -1,6 +1,5 @@
 package sample
 
-import io.ktor.utils.io.core.*
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.map
@@ -12,11 +11,11 @@ import olc.game_engine.*
 class Renderable(
     sFile: String,
     private val pge: PixelGameEngine
-) : Closeable {
+) {
     val sprite: Sprite = Sprite(sFile)
     val decal: Decal = pge.createDecal(sprite)
 
-    override fun close() {
+    fun close() {
         pge.deleteDecal(decal)
     }
 

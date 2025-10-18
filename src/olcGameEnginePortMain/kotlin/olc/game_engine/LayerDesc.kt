@@ -1,10 +1,8 @@
 package olc.game_engine
 
-import kotlin.system.getTimeNanos
-
 @ExperimentalUnsignedTypes
 class LayerDesc {
-    val id = getTimeNanos()
+    val id = nextId()
     val offset = Vf2d(0, 0)
     val scale = Vf2d(1, 1)
     var show = false
@@ -14,4 +12,13 @@ class LayerDesc {
     val decalInstanceList: MutableList<DecalInstance> = mutableListOf()
     val tint = Pixel.WHITE
     val funcHook: (() -> Unit)? = null
+
+    companion object {
+        private var counter = 0L
+
+        private fun nextId(): Long {
+            counter += 1
+            return counter
+        }
+    }
 }

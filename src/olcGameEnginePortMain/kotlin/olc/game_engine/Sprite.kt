@@ -1,11 +1,18 @@
 package olc.game_engine
 
 import kotlinx.cinterop.*
+import platform.CoreFoundation.CFRelease
+import platform.CoreFoundation.CFURLCreateFromFileSystemRepresentation
+import platform.CoreGraphics.*
+import platform.ImageIO.CGImageSourceCreateImageAtIndex
+import platform.ImageIO.CGImageSourceCreateWithURL
 import platform.posix.*
 import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.native.concurrent.ThreadLocal
+
+private const val BITMAP_INFO_BYTE_ORDER_32_BIG_INT: Int = (4 shl 12)
 
 /**
 
@@ -126,8 +133,29 @@ open class Sprite @ExperimentalUnsignedTypes constructor(var data: UIntArray = U
         )
     }
 
+    @OptIn(kotlin.experimental.ExperimentalNativeApi::class)
     fun loadFromFile(imageFile: String, pack: ResourcePack? = null): rcode {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        if (imageFile.endsWith(".spr", ignoreCase = true)) {
+            return loadFromPGESprFile(imageFile, pack)
+        }
+
+        if (pack != null) {
+            println("Sprite.loadFromFile: ResourcePack loading for images is not supported for '$imageFile'")
+            return rcode.FAIL
+        }
+
+        val resolvedPath = resolveResourcePath(imageFile) ?: run {
+            println("Sprite.loadFromFile: unable to locate '$imageFile'")
+            return rcode.NO_FILE
+        }
+
+        return when (Platform.osFamily) {
+            OsFamily.MACOSX -> loadFromFileMac(resolvedPath)
+            else -> {
+                println("Sprite.loadFromFile: PNG loading is not implemented for ${Platform.osFamily}.")
+                rcode.FAIL
+            }
+        }
     }
 
     @ExperimentalUnsignedTypes
@@ -190,6 +218,140 @@ open class Sprite @ExperimentalUnsignedTypes constructor(var data: UIntArray = U
     var height = 0
     private var modeSample = Mode.NORMAL
 }
+
+private fun Sprite.loadFromFileMac(path: String): rcode = memScoped {
+    val pathBytes = path.cstr.getPointer(this)
+    val url = CFURLCreateFromFileSystemRepresentation(
+        allocator = null,
+        buffer = pathBytes.reinterpret(),
+        bufLen = path.length.convert(),
+        isDirectory = false
+    ) ?: return rcode.FAIL
+
+    val imageSource = CGImageSourceCreateWithURL(url, null)
+    if (imageSource == null) {
+        CFRelease(url)
+        return rcode.FAIL
+    }
+
+    val image = CGImageSourceCreateImageAtIndex(imageSource, 0u, null)
+    if (image == null) {
+        CFRelease(imageSource)
+        CFRelease(url)
+        return rcode.FAIL
+    }
+
+    val width = CGImageGetWidth(image).toInt()
+    val height = CGImageGetHeight(image).toInt()
+    if (width <= 0 || height <= 0) {
+        CGImageRelease(image)
+        CFRelease(imageSource)
+        CFRelease(url)
+        return rcode.FAIL
+    }
+
+    val bytesPerRow = width * 4
+    val colorSpace = CGColorSpaceCreateDeviceRGB()
+    if (colorSpace == null) {
+        CGImageRelease(image)
+        CFRelease(imageSource)
+        CFRelease(url)
+        return rcode.FAIL
+    }
+
+    val bitmapInfo = CGImageAlphaInfo.kCGImageAlphaPremultipliedLast.value or BITMAP_INFO_BYTE_ORDER_32_BIG_INT.toUInt()
+    val context = CGBitmapContextCreate(
+        data = null,
+        width = width.toULong(),
+        height = height.toULong(),
+        bitsPerComponent = 8u,
+        bytesPerRow = bytesPerRow.toULong(),
+        space = colorSpace,
+        bitmapInfo = bitmapInfo
+    )
+
+    if (context == null) {
+        CGColorSpaceRelease(colorSpace)
+        CGImageRelease(image)
+        CFRelease(imageSource)
+        CFRelease(url)
+        return rcode.FAIL
+    }
+
+    val drawRect = CGRectMake(0.0, 0.0, width.toDouble(), height.toDouble())
+    CGContextDrawImage(context, drawRect, image)
+
+    val dataPointer = CGBitmapContextGetData(context)?.reinterpret<UByteVar>()
+    if (dataPointer == null) {
+        CGContextRelease(context)
+        CGColorSpaceRelease(colorSpace)
+        CGImageRelease(image)
+        CFRelease(imageSource)
+        CFRelease(url)
+        return rcode.FAIL
+    }
+
+    val bufferSize = bytesPerRow * height
+    val rawBytes = ByteArray(bufferSize)
+    rawBytes.usePinned { pinned ->
+        memcpy(pinned.addressOf(0), dataPointer, bufferSize.convert())
+    }
+
+    val pixelCount = width * height
+    val pixels = UIntArray(pixelCount)
+    var index = 0
+    for (i in 0 until pixelCount) {
+        val r = rawBytes[index++].toUByte()
+        val g = rawBytes[index++].toUByte()
+        val b = rawBytes[index++].toUByte()
+        val a = rawBytes[index++].toUByte()
+        pixels[i] = Pixel(r, g, b, a).n
+    }
+
+    this@loadFromFileMac.width = width
+    this@loadFromFileMac.height = height
+    this@loadFromFileMac.data = pixels
+
+    CGContextRelease(context)
+    CGColorSpaceRelease(colorSpace)
+    CGImageRelease(image)
+    CFRelease(imageSource)
+    CFRelease(url)
+
+    return rcode.OK
+}
+
+private fun resolveResourcePath(imageFile: String): String? {
+    val envPath = getenv("OLC_RESOURCE_DIR")?.toKString()
+
+    val primaryRoots = listOf(
+        "",
+        "resources",
+        "src/olcGameEnginePortMain/resources"
+    )
+
+    val prefixes = generateSequence("") { current -> "$current../" }.take(6).toList()
+
+    val candidates = mutableListOf<String>()
+    if (!envPath.isNullOrBlank()) {
+        candidates += if (envPath.endsWith('/')) envPath + imageFile else "$envPath/$imageFile"
+    }
+
+    for (prefix in prefixes) {
+        for (root in primaryRoots) {
+            val partial = if (root.isEmpty()) imageFile else "$root/$imageFile"
+            candidates += prefix + partial
+        }
+    }
+
+    for (candidate in candidates.distinct()) {
+        if (fileExists(candidate)) return candidate
+    }
+
+    return null
+}
+
+private fun fileExists(path: String): Boolean = access(path, F_OK) == 0
 
 @ExperimentalUnsignedTypes
 fun CPointer<FILE>.fileToByteArray(): ByteArray {

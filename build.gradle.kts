@@ -24,6 +24,9 @@ kotlin {
 
     sourceSets {
         val olcGameEnginePortMain by getting {
+            dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
+            }
         }
 
         hostTarget.apply {
@@ -72,6 +75,15 @@ kotlin {
             }
             executable("BallsDemo") {
                 entryPoint = "demos.balls.main"
+            }
+            executable("MandelbrotDemo") {
+                entryPoint = "demos.mandelbrot.main"
+            }
+            executable("BejewelledDemo") {
+                entryPoint = "demos.bejewelled_maybe.main"
+            }
+            executable("DungeonWarpingDemo") {
+                entryPoint = "sample.mainOlcDungeon"
             }
             // in progress
             executable("PixelShooterGame") {

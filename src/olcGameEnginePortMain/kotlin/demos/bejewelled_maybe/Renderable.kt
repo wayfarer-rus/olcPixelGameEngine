@@ -1,6 +1,5 @@
 package demos.bejewelled_maybe
 
-import io.ktor.utils.io.core.*
 import olc.game_engine.Decal
 import olc.game_engine.PixelGameEngine
 import olc.game_engine.Sprite
@@ -8,11 +7,11 @@ import olc.game_engine.Sprite
 class Renderable(
     sFile: String,
     private val pge: PixelGameEngine
-) : Closeable {
+) {
     val sprite: Sprite = Sprite(sFile)
     val decal: Decal = pge.createDecal(sprite)
 
-    override fun close() {
+    fun close() {
         pge.deleteDecal(decal)
     }
 

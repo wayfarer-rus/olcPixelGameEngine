@@ -115,3 +115,5 @@ fun mainSortOfBejewelled() {
         main.start()
     }
 }
+
+fun main() = mainSortOfBejewelled()

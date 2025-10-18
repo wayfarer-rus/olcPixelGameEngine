@@ -110,6 +110,17 @@ inline class Pixel(val n: UInt = 0xFF000000u) {
         val VERY_DARK_MAGENTA = Pixel(64u, 0u, 64u)
         val BLACK = Pixel(0u, 0u, 0u)
         val BLANK = Pixel(0u, 0u, 0u, 0u)
+        val COLORS = arrayOf(
+            BLACK,
+            GREY, DARK_GREY, VERY_DARK_GREY,
+            RED, DARK_RED, VERY_DARK_RED,
+            YELLOW, DARK_YELLOW, VERY_DARK_YELLOW,
+            GREEN, DARK_GREEN, VERY_DARK_GREEN,
+            CYAN, DARK_CYAN, VERY_DARK_CYAN,
+            BLUE, DARK_BLUE, VERY_DARK_BLUE,
+            MAGENTA, DARK_MAGENTA, VERY_DARK_MAGENTA,
+            WHITE
+        )
     }
 
     override fun toString(): String {

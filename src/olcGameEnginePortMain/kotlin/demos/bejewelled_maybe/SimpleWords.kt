@@ -65,6 +65,9 @@ class RectWorld(val w: Int, val h: Int, val jewelFactory: JewelFactory) : World 
                         jewel.fall(elapsedTime)
                     }
                 }
+                JewelState.MOVING, JewelState.COLLAPSING, JewelState.NOT_ON_FIELD, null -> {
+                    // no action needed for these states during falling resolution
+                }
             }
         }
         // check for empty spaces
@@ -119,11 +122,12 @@ class RectWorld(val w: Int, val h: Int, val jewelFactory: JewelFactory) : World 
                 JewelState.STILL, JewelState.MOVING, JewelState.FALLING, JewelState.COLLAPSING -> {
                     jewel.render(pge, elapsedTime)
                 }
+                JewelState.NOT_ON_FIELD, JewelState.ELIMINATED, null -> {
+                    // nothing to draw
+                }
             }
 
             if (jewel?.state == JewelState.FALLING) skipSelectionDraw = true
-
-            error()
         }
 
         if (skipSelectionDraw.not())
