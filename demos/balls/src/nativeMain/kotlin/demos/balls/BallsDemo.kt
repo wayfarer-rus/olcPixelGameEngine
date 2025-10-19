@@ -1,18 +1,27 @@
 package demos.balls
 
+import demos.slider.Slider
 import geometry_2d.Point
 import olc.game_engine.Key
+import olc.game_engine.Pixel
 import olc.game_engine.PixelGameEngineImpl
 import olc.game_engine.RetCode
 import kotlin.math.pow
 
 @ExperimentalUnsignedTypes
 class BallsDemo : PixelGameEngineImpl() {
+
     override fun onUserCreate(): Boolean {
         reset()
         offset = Point(
             getDrawTargetWidth() / 2 - body.w * R + R,
             getDrawTargetHeight() / 2 - body.h * R + R
+        )
+        toughnessSlider = Slider(
+            engine = this,
+            length = 140,
+            width = 12,
+            initialPosition = toughnessControl.sliderPosition()
         )
         return true
     }
@@ -21,6 +30,11 @@ class BallsDemo : PixelGameEngineImpl() {
         body = Body(8, 8, 64, R)
         projectiles.clear()
         splats.clear()
+        toughnessControl.reset()
+        if (this::toughnessSlider.isInitialized) {
+            toughnessSlider.isHeld = false
+            toughnessSlider.position = toughnessControl.sliderPosition()
+        }
     }
 
     override fun onUserUpdate(elapsedTime: Float): Boolean {
@@ -35,10 +49,13 @@ class BallsDemo : PixelGameEngineImpl() {
             reset()
         }
 
-        // draw
         clear()
+        drawToughnessControl()
 
         var collision: List<Pair<Projectile, Point>> = emptyList()
+
+        val breakThreshold = baseEnergyThreshold * toughnessControl.breakThresholdMultiplier
+        val glancingThreshold = MIN_GLANCING_ENERGY * toughnessControl.glancingThresholdMultiplier
 
         projectiles.forEach {
             it.move(elapsedTime)
@@ -51,19 +68,40 @@ class BallsDemo : PixelGameEngineImpl() {
                 val p = offset + part
                 val u = it.mass * it.speed / (it.mass + body.partMass)
                 val k = body.partMass * u.pow(2) / 2
+                val effectiveEnergy = k * toughnessControl.energyTransferMultiplier
+                val reboundSpeed = it.speed * toughnessControl.reboundRetentionFactor
+                val hardImpact = effectiveEnergy > glancingThreshold
 
-                println("u = $u; K = $k")
-                it.collided = true
+                when {
+                    effectiveEnergy > breakThreshold -> {
+                        it.collided = true
+                        val transferredSpeed =
+                            (u * toughnessControl.energyTransferMultiplier).coerceAtLeast(MIN_FRAGMENT_SPEED)
+                        val fragment = Projectile(
+                            p,
+                            (p - it.pos).toLength(transferredSpeed),
+                            body.partMass,
+                            transferredSpeed
+                        )
+                        it.speed = reboundSpeed
+                        it.v = (it.pos - p).toLength(reboundSpeed)
+                        fragment to part
+                    }
 
-                if (k > energyThreshold) {
-                    val result = Pair(Projectile(p, (p - it.pos).toLength(u), body.partMass, u), part)
-//                    it.pos = Point(-100, -100)
-                    it.v = (it.pos - p).toLength(it.speed)
-                    result
-                } else if (k > 1.0) {
-                    it.v = (it.pos - p).toLength(it.speed)
-                    null
-                } else null
+                    hardImpact -> {
+                        it.collided = true
+                        it.speed = reboundSpeed
+                        it.v = (it.pos - p).toLength(reboundSpeed)
+                        null
+                    }
+
+                    else -> {
+                        it.collided = false
+                        it.speed = reboundSpeed
+                        it.v = (it.pos - p).toLength(reboundSpeed)
+                        null
+                    }
+                }
             }
         }
 
@@ -93,13 +131,36 @@ class BallsDemo : PixelGameEngineImpl() {
         return true
     }
 
+    private fun drawToughnessControl() {
+        if (!this::toughnessSlider.isInitialized) return
+
+        val sliderX = 20
+        val sliderY = getDrawTargetHeight() - 30
+
+        toughnessSlider.draw(sliderX, sliderY, Pixel.WHITE)
+        toughnessControl.updateFromSlider(toughnessSlider.position)
+        drawString(
+            sliderX,
+            sliderY - 12,
+            "Toughness: ${toughnessControl.value}",
+            Pixel.WHITE
+        )
+    }
+
     private val R = 1
     private lateinit var body: Body
     private var offset = Point(0, 0)
     private val speed = 400f
-    private val energyThreshold = 75f
+    private val toughnessControl = ToughnessControl()
+    private lateinit var toughnessSlider: Slider
+    private val baseEnergyThreshold = 75f
     private val projectiles: MutableList<Projectile> = mutableListOf()
     private val splats: MutableList<Projectile> = mutableListOf()
+
+    companion object {
+        private const val MIN_GLANCING_ENERGY = 1.0f
+        private const val MIN_FRAGMENT_SPEED = 5f
+    }
 }
 
 class Projectile(var pos: Point, var v: Point, val mass: Int, var speed: Float) {
