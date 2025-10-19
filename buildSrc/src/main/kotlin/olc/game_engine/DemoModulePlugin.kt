@@ -3,7 +3,9 @@ package olc.game_engine
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.plugins.ExtraPropertiesExtension
+import org.gradle.api.tasks.Copy
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.mpp.Executable
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
@@ -106,6 +108,12 @@ class DemoModulePlugin : Plugin<Project> {
 
         hostTarget.compilations.findByName("test")?.defaultSourceSet?.dependencies {
             implementation(project.dependencies.create("org.jetbrains.kotlin:kotlin-test:$kotlinVersion"))
+        }
+
+        project.tasks.withType(Copy::class.java).configureEach {
+            if (name.endsWith("ProcessResources")) {
+                duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+            }
         }
     }
 
