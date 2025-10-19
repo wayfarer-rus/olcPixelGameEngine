@@ -36,7 +36,7 @@ subprojects {
                         into(outputResourcesDir)
                     }
 
-                    binary.linkTaskProvider?.configure { finalizedBy(copyTaskProvider) }
+                    binary.linkTaskProvider.configure { finalizedBy(copyTaskProvider) }
                     val runTaskName = binary.runTaskName ?: return@forEach
                     tasks.named(runTaskName).configure { dependsOn(copyTaskProvider) }
                 }
