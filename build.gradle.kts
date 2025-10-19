@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.Executable
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 
 plugins {
-    kotlin("multiplatform") version "2.3.0-Beta1" apply false
+    kotlin("multiplatform") apply false
 }
 
 allprojects {

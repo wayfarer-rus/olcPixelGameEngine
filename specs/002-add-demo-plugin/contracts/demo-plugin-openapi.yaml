@@ -1,0 +1,147 @@
+openapi: 3.1.0
+info:
+  title: Demo Module Configuration Service
+  version: 0.1.0
+  description: |
+    Conceptual contract representing how maintainers declare demo modules via the buildSrc plugin DSL.
+    Each request maps to Gradle configuration inputs processed during project evaluation.
+servers:
+  - url: gradle://local-build
+paths:
+  /demo-modules:
+    post:
+      summary: Register a new demo module configuration
+      description: Accepts the minimal metadata needed for the plugin to set up a demo project.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DemoModuleConfig'
+      responses:
+        '201':
+          description: Demo module configuration applied successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DemoModuleStatus'
+        '400':
+          description: Validation failed for supplied configuration.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+  /demo-modules/{applicationName}:
+    patch:
+      summary: Update configuration for an existing demo module
+      parameters:
+        - name: applicationName
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DemoModuleUpdate'
+      responses:
+        '200':
+          description: Configuration updated and re-applied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DemoModuleStatus'
+        '400':
+          description: Validation failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '404':
+          description: Demo module not found.
+  /demo-modules/{applicationName}/validate:
+    post:
+      summary: Validate configuration inputs without applying them
+      parameters:
+        - name: applicationName
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DemoModuleConfig'
+      responses:
+        '200':
+          description: Validation succeeded with no issues.
+        '400':
+          description: Validation failed; response includes actionable guidance.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+components:
+  schemas:
+    DemoModuleConfig:
+      type: object
+      required:
+        - applicationName
+        - entryPoint
+      properties:
+        applicationName:
+          type: string
+          description: Display name and executable identifier; must be unique among demos.
+        entryPoint:
+          type: string
+          description: Fully qualified Kotlin function name used as binary entry point.
+        dependencies:
+          type: array
+          items:
+            type: string
+          description: Additional dependency notations appended to defaults.
+        resourceDirs:
+          type: array
+          items:
+            type: string
+          description: Optional resource directories bundled with the executable.
+    DemoModuleUpdate:
+      allOf:
+        - $ref: '#/components/schemas/DemoModuleConfig'
+      description: Partial or full update for an existing demo module configuration.
+    DemoModuleStatus:
+      type: object
+      properties:
+        applicationName:
+          type: string
+        entryPoint:
+          type: string
+        targets:
+          type: array
+          items:
+            type: string
+        appliedDefaults:
+          type: object
+          additionalProperties: true
+        warnings:
+          type: array
+          items:
+            type: string
+    ValidationError:
+      type: object
+      properties:
+        message:
+          type: string
+        fieldErrors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              issue:
+                type: string

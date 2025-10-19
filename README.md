@@ -71,6 +71,33 @@ All build outputs land in `build/bin/<module>/` for the selected target.
 *Run task suffixes reflect the host target (e.g., `MacosX64`). Adjust the suffix for your platform when executing these
 commands.*
 
+## Defining Demo Modules via buildSrc
+
+New and existing demos share a Gradle convention plugin that lives under `buildSrc`. Apply it from a demo module:
+
+```kotlin
+plugins {
+    id("olc.game_engine.demo")
+}
+
+demoModule {
+    applicationName = "YourDemoName"
+    entryPoint = "demos.your_demo.main"
+    // dependencies.add("dependency:notation")  // Optional extra nativeMain dependency
+    // resourceDirs.add("src/nativeMain/customResources") // Optional extra resources
+}
+```
+
+The plugin automatically:
+
+- Applies Kotlin Multiplatform with the correct host target (macOS, Linux, or Windows).
+- Attaches the shared engine (`:engine`) and shared asset bundle (`:demos:shared-assets`).
+- Enables required language features and experimental opt-ins.
+- Configures a native executable named after `applicationName` that launches the provided `entryPoint`.
+
+Run `./gradlew :demos:<name>:assemble` after updating the module to confirm it still builds and produces the expected
+executable.
+
 ## Project Layout
 
 ```

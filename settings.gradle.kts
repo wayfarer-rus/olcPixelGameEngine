@@ -1,3 +1,9 @@
+pluginManagement {
+    plugins {
+        id("org.jetbrains.kotlin.multiplatform") version "2.3.0-Beta1"
+    }
+}
+
 rootProject.name = "olcGameEnginePort"
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
