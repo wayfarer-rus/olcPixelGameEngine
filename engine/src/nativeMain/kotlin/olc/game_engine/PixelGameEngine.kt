@@ -390,8 +390,8 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
                 sx = 0
                 sy += 8 * scale
             } else {
-                val ox = (c.toInt() - 32) % 16
-                val oy = (c.toInt() - 32) / 16
+                val ox = (c.code - 32) % 16
+                val oy = (c.code - 32) / 16
 
                 if (scale > 1) {
                     for (i in 0 until 8)
@@ -578,45 +578,42 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
     }
 
     override fun fillTriangle(point1: Pair<Int, Int>, point2: Pair<Int, Int>, point3: Pair<Int, Int>, p: Pixel) {
-        val drawLine: (Int, Int, Int) -> Unit = { sx, ex, ny ->
-            for (i in sx..ex) draw(i, ny, p)
+        val scanline: (Float, Float, Int) -> Unit = { startX, endX, y ->
+            val xStart = min(startX, endX).roundToInt()
+            val xEnd = max(startX, endX).roundToInt()
+            for (x in xStart..xEnd) draw(x, y, p)
         }
 
-        val (A, B, C) = listOf(point1, point2, point3).sortedBy { it.second }
+        val (a, b, c) = listOf(point1, point2, point3).sortedBy { it.second }
+        val (ax, ay) = a
+        val (bx, by) = b
+        val (cx, cy) = c
 
-        val dx1 = if (B.second - A.second > 0) (B.first - A.first) / (B.second - A.second) else 0
-        val dx2 = if (C.second - A.second > 0) (C.first - A.first) / (C.second - A.second) else 0
-        val dx3 = if (C.second - B.second > 0) (C.first - B.first) / (C.second - B.second) else 0
+        val totalHeight = cy - ay
+        if (totalHeight == 0) {
+            val minX = min(ax, min(bx, cx)).toFloat()
+            val maxX = max(ax, max(bx, cx)).toFloat()
+            scanline(minX, maxX, ay)
+            return
+        }
 
-        var s = A
-        var e = A
+        val upperHeight = by - ay
+        for (i in 0..totalHeight) {
+            val secondHalf = i > upperHeight || upperHeight == 0
+            val segmentHeight = if (secondHalf) (cy - by) else upperHeight
+            if (segmentHeight == 0) continue
 
-        if (dx1 > dx2) {
-            while (s.second <= B.second) {
-                drawLine(s.first, e.first, s.second)
-                s = Pair(s.first + dx2, s.second + 1)
-                e = Pair(e.first + dx1, e.second + 1)
+            val alpha = i.toFloat() / totalHeight.toFloat()
+            val beta = (i - if (secondHalf) upperHeight else 0).toFloat() / segmentHeight.toFloat()
+
+            val axf = ax + (cx - ax) * alpha
+            val bxf = if (secondHalf) {
+                bx + (cx - bx) * beta
+            } else {
+                ax + (bx - ax) * beta
             }
 
-            e = B
-            while (s.second <= C.second) {
-                drawLine(s.first, e.first, s.second)
-                s = Pair(s.first + dx2, s.second + 1)
-                e = Pair(e.first + dx3, e.second + 1)
-            }
-        } else {
-            while (s.second <= B.second) {
-                drawLine(s.first, e.first, s.second)
-                s = Pair(s.first + dx1, s.second + 1)
-                e = Pair(e.first + dx2, e.second + 1)
-            }
-
-            s = B
-            while (s.second <= C.second) {
-                drawLine(s.first, e.first, s.second)
-                s = Pair(s.first + dx3, s.second + 1)
-                e = Pair(e.first + dx2, e.second + 1)
-            }
+            scanline(axf, bxf, ay + i)
         }
     }
 
@@ -1266,15 +1263,15 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
 
         // this call will create our "canvas" to draw into
         glTexImage2D(
-            GL_TEXTURE_2D.toUInt(), 0, GL_RGBA.toInt(),
+            GL_TEXTURE_2D.toUInt(), 0, GL_RGBA,
             nScreenWidth,
             nScreenHeight,
             0, GL_RGBA.toUInt(), GL_UNSIGNED_BYTE.toUInt(),
             this.pDefaultDrawTarget.data.toCValues()
         )
 
-        glTexParameteri(GL_TEXTURE_2D.toUInt(), GL_TEXTURE_MAG_FILTER.toUInt(), GL_NEAREST.toInt())
-        glTexParameteri(GL_TEXTURE_2D.toUInt(), GL_TEXTURE_MIN_FILTER.toUInt(), GL_NEAREST.toInt())
+        glTexParameteri(GL_TEXTURE_2D.toUInt(), GL_TEXTURE_MAG_FILTER.toUInt(), GL_NEAREST)
+        glTexParameteri(GL_TEXTURE_2D.toUInt(), GL_TEXTURE_MIN_FILTER.toUInt(), GL_NEAREST)
 
         // more configuration
         programId = olcLoadShaders()
@@ -1385,10 +1382,10 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
         var py = 0
 
         for (b in 0 until 1024 step 4) {
-            val sym1 = data[b + 0].toLong().toUInt() - 48u
-            val sym2 = data[b + 1].toLong().toUInt() - 48u
-            val sym3 = data[b + 2].toLong().toUInt() - 48u
-            val sym4 = data[b + 3].toLong().toUInt() - 48u
+            val sym1 = data[b + 0].code.toLong().toUInt() - 48u
+            val sym2 = data[b + 1].code.toLong().toUInt() - 48u
+            val sym3 = data[b + 2].code.toLong().toUInt() - 48u
+            val sym4 = data[b + 3].code.toLong().toUInt() - 48u
             val r = (sym1 shl 18) or (sym2 shl 12) or (sym3 shl 6) or sym4
 
             for (i in 0 until 24) {

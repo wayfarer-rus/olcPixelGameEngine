@@ -19,6 +19,7 @@ include(
     ":demos:mandelbrot",
     ":demos:bejewelled",
     ":demos:sample_app",
+    ":demos:slider",
     ":demos:dungeon_warping",
     ":demos:shared-assets",
     ":games:pixel_shooter"

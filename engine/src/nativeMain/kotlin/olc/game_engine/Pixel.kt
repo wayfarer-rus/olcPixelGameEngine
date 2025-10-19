@@ -39,7 +39,7 @@ Patreon:	https://www.patreon.com/javidx9
  */
 
 @ExperimentalUnsignedTypes
-inline class Pixel(val n: UInt = 0xFF000000u) {
+value class Pixel(val n: UInt = 0xFF000000u) {
 
     constructor(red: UByte, green: UByte, blue: UByte, alpha: UByte = 255u) :
             this((alpha.toUInt() shl 24) or (blue.toUInt() shl 16) or (green.toUInt() shl 8) or red.toUInt())

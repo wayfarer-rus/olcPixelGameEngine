@@ -2,11 +2,12 @@ package olc.game_engine
 
 import kotlin.math.*
 
-inline class Vi2d(val data: Vf2d) {
+value class Vi2d(val data: Vf2d) {
     operator fun times(value: Vi2d) = Vi2d(data.times(value.data))
     operator fun times(f: Float) = Vi2d(data.times(f))
     operator fun div(v: Vi2d) = Vi2d(data.div(v.data))
     operator fun div(f: Float) = Vi2d(data.div(f))
+    operator fun minus(v: Vi2d) = Vi2d(data.minus(v.data))
 
     constructor(x: Int, y: Int) : this(Vf2d(x, y))
 
@@ -22,7 +23,7 @@ inline class Vi2d(val data: Vf2d) {
         }
 }
 
-inline class Vf2d(val data: Vd2d) {
+value class Vf2d(val data: Vd2d) {
     constructor(x: Int, y: Int) : this(Vd2d(x, y))
     constructor(x: Float, y: Float) : this(Vd2d(x.toDouble(), y.toDouble()))
 
