@@ -1,0 +1,65 @@
+openapi: 3.0.3
+info:
+  title: Balls Demo Control Service
+  version: 0.1.0
+  description: |
+    Contract describing how the Balls demo exposes structure size and cannonball mass settings
+    to external tooling (e.g., automated QA harnesses). Endpoints mutate in-memory state only.
+servers:
+  - url: http://localhost:8080
+    description: Local harness controlling the demo
+paths:
+  /demos/balls/settings:
+    get:
+      summary: Retrieve the current slider configuration
+      operationId: getBallsSettings
+      responses:
+        '200':
+          description: Current configuration snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BallsSettings'
+    post:
+      summary: Apply a new slider configuration
+      operationId: updateBallsSettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BallsSettings'
+      responses:
+        '204':
+          description: Settings accepted for next frame
+        '400':
+          description: Validation failed (invalid size or mass multiplier)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    BallsSettings:
+      type: object
+      required:
+        - structureSize
+        - massMultiplier
+      properties:
+        structureSize:
+          type: integer
+          enum: [ 8, 12, 16 ]
+          description: Number of balls per side selected by the structure size slider.
+        massMultiplier:
+          type: number
+          format: float
+          enum: [ 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0 ]
+          description: Cannonball mass multiplier derived from the mass slider.
+    ErrorResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          description: Human-readable explanation of the validation failure.
