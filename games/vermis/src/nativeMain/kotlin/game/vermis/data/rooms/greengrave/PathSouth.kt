@@ -16,7 +16,7 @@ class PathSouth : Room {
   private val roomLayoutPath = "resources/rooms/path_south.txt"
   override val roomLayout: Array<CharArray> by lazy {
     val fileContent = roomLayoutToString(roomLayoutPath)
-    fileContent.split("\n").map { it.toCharArray() }.toTypedArray()
+    fileContent.split("\n").filter { it.isNotEmpty() }.map { it.toCharArray() }.toTypedArray()
   }
 
   override fun screenOffset(e: PixelGameEngine): Vi2d {
@@ -52,5 +52,9 @@ class PathSouth : Room {
       }
       pos = Vi2d(offset.x, pos.y + size.y)
     }
+  }
+
+  override fun initRoom(e: PixelGameEngine) {
+
   }
 }

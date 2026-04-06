@@ -1,6 +1,7 @@
 package game.vermis.data.rooms.greengrave
 
 import game.vermis.Room
+import olc.game_engine.PixelGameEngine
 
 enum class Direction { N, S, E, W }
 
@@ -26,4 +27,8 @@ object GreenGrave {
     Connection("exterior", "buried_shrine", Direction.W, secret = true),
     Connection("exterior", "path_south", Direction.S),
   )
+
+  fun initRooms(e: PixelGameEngine) {
+    rooms.forEach { room -> room.initRoom(e) }
+  }
 }

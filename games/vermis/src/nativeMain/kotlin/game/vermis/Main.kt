@@ -1,5 +1,6 @@
 package game.vermis
 
+import game.vermis.data.rooms.RoomsCatalogue
 import game.vermis.data.rooms.greengrave.GreenGrave
 import olc.game_engine.Key
 import olc.game_engine.Pixel
@@ -10,18 +11,19 @@ class Vermis : PixelGameEngineImpl() {
   override val appName = "Vermis"
 
   private var currentRoomIndex = 0
+  private var playerVisible = true
 
   override fun onUserCreate(): Boolean {
     LayersMap.initLayers(this)
+    RoomsCatalogue.initRooms(this)
     Player.initPlayer(this)
     Player.placeAt(GreenGrave.rooms[0], this)
     return true
   }
 
   override fun onUserUpdate(elapsedTime: Float): Boolean {
-    if (getKey(Key.SHIFT).bPressed) {
-      currentRoomIndex = (currentRoomIndex + 1) % GreenGrave.rooms.size
-      Player.placeAt(GreenGrave.rooms[currentRoomIndex], this)
+    if (getKey(Key.X).bPressed) {
+      playerVisible = !playerVisible
     }
 
     // Clear all layers
@@ -33,11 +35,13 @@ class Vermis : PixelGameEngineImpl() {
     // Draw room (populates INTERACTABLE layer with collision sprites)
     GreenGrave.rooms[currentRoomIndex].draw(this)
 
-    // Update player (reads INTERACTABLE layer for collision)
-    Player.update(this, elapsedTime)
+    if (playerVisible) {
+      // Update player (reads INTERACTABLE layer for collision, clamped to room bounds)
+      Player.update(this, GreenGrave.rooms[currentRoomIndex], elapsedTime)
 
-    // Draw player
-    Player.drawPlayer(this)
+      // Draw player
+      Player.drawPlayer(this)
+    }
 
     // Debug overlay
     setDrawTarget(LayersMap[Layer.OVERLAY_DEBUG])

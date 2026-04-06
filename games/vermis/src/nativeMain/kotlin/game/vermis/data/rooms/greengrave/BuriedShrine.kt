@@ -16,13 +16,16 @@ class BuriedShrine : Room {
   private val roomLayoutPath = "resources/rooms/buried_shrine.txt"
   override val roomLayout: Array<CharArray> by lazy {
     val fileContent = roomLayoutToString(roomLayoutPath)
-    fileContent.split("\n").map { it.toCharArray() }.toTypedArray()
+    fileContent.split("\n").filter { it.isNotEmpty() }.map { it.toCharArray() }.toTypedArray()
   }
 
   override fun screenOffset(e: PixelGameEngine): Vi2d {
     val screenCenter = Vi2d(e.screenWidth() / 2, e.screenHeight() / 2)
     val roomCenter = Vi2d(roomLayout.first().size * TILE_SIZE.x / 2, roomLayout.size * TILE_SIZE.y / 2)
     return screenCenter - roomCenter
+  }
+
+  override fun initRoom(e: PixelGameEngine) {
   }
 
   override fun draw(e: PixelGameEngine) {

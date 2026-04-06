@@ -10,8 +10,10 @@ import platform.posix.fopen
 
 const val RESOURCES_ROOT_PATH = "/Users/andrei.efimov/IdeaProjects/my/olcPixelGameEngine/games/vermis/build/bin/macosArm64/VermisDemoDebugExecutable"
 
+fun localPathToAbsolute(path: String): String = "$RESOURCES_ROOT_PATH/$path"
+
 fun roomLayoutToString(pathToFile: String): String {
-  val realPathToFile = "$RESOURCES_ROOT_PATH/$pathToFile"
+  val realPathToFile = localPathToAbsolute(pathToFile)
   if (!fileExists(realPathToFile)) {
     throw IllegalArgumentException("File not found: $realPathToFile")
   }

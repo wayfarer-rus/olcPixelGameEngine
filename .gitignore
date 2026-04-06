@@ -17,4 +17,4 @@ out/
 *.jar
 *.log
 .env*
-/.kotlin/
+.kotlin/
