@@ -52,7 +52,7 @@ class DemoModulePlugin : Plugin<Project> {
     private fun configureHostTarget(kotlin: KotlinMultiplatformExtension): KotlinNativeTarget {
         val hostOs = System.getProperty("os.name")
         val factoryMethod = when {
-            hostOs == "Mac OS X" -> "macosX64"
+            hostOs == "Mac OS X" -> "macosArm64"
             hostOs == "Linux" -> "linuxX64"
             hostOs.startsWith("Windows") -> "mingwX64"
             else -> error("Host OS '$hostOs' is not supported for Kotlin/Native.")
@@ -81,8 +81,7 @@ class DemoModulePlugin : Plugin<Project> {
         val sharedAssetsDependency =
             project.dependencies.project(mapOf("path" to SHARED_ASSETS_PROJECT_PATH))
         val kotlinVersion =
-            kotlin.coreLibrariesVersion ?: project.findProperty("kotlin.version")?.toString()
-            ?: DEFAULT_KOTLIN_VERSION
+          kotlin.coreLibrariesVersion
 
         kotlin.sourceSets.all {
             languageSettings.enableLanguageFeature("InlineClasses")

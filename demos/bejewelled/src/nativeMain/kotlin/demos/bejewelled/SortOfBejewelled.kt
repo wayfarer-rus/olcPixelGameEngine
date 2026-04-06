@@ -94,7 +94,7 @@ class SortOfBejewelled : PixelGameEngineImpl() {
         world.render(this, elapsedTime)
 
         drawStringDecal(Vf2d(0, 300), vMouse.toString())
-        drawPartialDecal(vMouse.data, arrowRenderable.decal, Vf2d(0, 0), Vf2d(17, 20))
+        drawPartialDecal(vMouse.toVf2d(), arrowRenderable.decal, Vf2d(0, 0), Vf2d(17, 20))
 
         return getKey(Key.ESCAPE).bPressed.not()
     }

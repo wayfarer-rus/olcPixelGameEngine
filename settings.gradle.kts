@@ -24,3 +24,5 @@ include(
     ":demos:shared-assets",
     ":games:pixel_shooter"
 )
+
+include("games:vermis")

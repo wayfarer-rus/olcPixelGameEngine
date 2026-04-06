@@ -143,13 +143,12 @@ abstract class JewelBase(
 
     override fun setStill() {
         val p = positionOnGrid
-        pos.x = p.x * Jewel.JEWEL_SIZE
-        pos.y = p.y * Jewel.JEWEL_SIZE
+        pos = Vf2d(p.x * Jewel.JEWEL_SIZE, p.y * Jewel.JEWEL_SIZE)
         state = JewelState.STILL
     }
 
     override fun fall(elapsedTime: Float) {
-        pos.y += elapsedTime * Jewel.JEWEL_FALLING_SPEED
+        pos = Vf2d(pos.x, pos.y + elapsedTime * Jewel.JEWEL_FALLING_SPEED)
         state = JewelState.FALLING
     }
 

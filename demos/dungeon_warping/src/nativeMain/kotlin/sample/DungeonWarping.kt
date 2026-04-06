@@ -214,7 +214,7 @@ class OlcDungeon : PixelGameEngineImpl() {
             render.add(
                 Quad(
                     points = arrayOf(projCube[v1], projCube[v2], projCube[v3], projCube[v4]),
-                    title = cell.id[f.ordinal].data
+                    title = cell.id[f.ordinal].toVf2d()
                 )
             )
         }
@@ -247,7 +247,7 @@ class OlcDungeon : PixelGameEngineImpl() {
             render.add(
                 Quad(
                     points = arrayOf(projCube[v1], projCube[v2], projCube[v3], projCube[v4]),
-                    title = cell.id[f.ordinal].data
+                    title = cell.id[f.ordinal].toVf2d()
                 )
             )
         }
@@ -310,14 +310,14 @@ class OlcDungeon : PixelGameEngineImpl() {
         cameraAngle += (cameraAngleTarget - cameraAngle) * 10.0f * elapsedTime
 
         // Arrow keys to move the selection cursor around map (boundary checked)
-        if (getKey(Key.LEFT).bPressed) cursor.x--
-        if (getKey(Key.RIGHT).bPressed) cursor.x++
-        if (getKey(Key.UP).bPressed) cursor.y--
-        if (getKey(Key.DOWN).bPressed) cursor.y++
-        if (cursor.x < 0) cursor.x = 0
-        if (cursor.y < 0) cursor.y = 0
-        if (cursor.x >= world.size.x) cursor.x = world.size.x - 1
-        if (cursor.y >= world.size.y) cursor.y = world.size.y - 1
+        if (getKey(Key.LEFT).bPressed) cursor = Vi2d(cursor.x - 1, cursor.y)
+        if (getKey(Key.RIGHT).bPressed) cursor = Vi2d(cursor.x + 1, cursor.y)
+        if (getKey(Key.UP).bPressed) cursor = Vi2d(cursor.x, cursor.y - 1)
+        if (getKey(Key.DOWN).bPressed) cursor = Vi2d(cursor.x, cursor.y + 1)
+        if (cursor.x < 0) cursor = Vi2d(0, cursor.y)
+        if (cursor.y < 0) cursor = Vi2d(cursor.x, 0)
+        if (cursor.x >= world.size.x) cursor = Vi2d(world.size.x - 1, cursor.y)
+        if (cursor.y >= world.size.y) cursor = Vi2d(cursor.x, world.size.y - 1)
 
         // Place block with space
         if (getKey(Key.SPACE).bPressed) {
@@ -384,7 +384,7 @@ class OlcDungeon : PixelGameEngineImpl() {
                     Vf2d(q.points[3].x, q.points[3].y)
                 ),
                 source_pos = q.title,
-                source_size = tileSize.data
+                source_size = tileSize.toVf2d()
             )
         }
 
@@ -392,8 +392,8 @@ class OlcDungeon : PixelGameEngineImpl() {
         drawPartialDecal(
             Vf2d(10, 10),
             rendAllWalls!!.decal,
-            (tileCursor * tileSize).data,
-            tileSize.data
+            (tileCursor * tileSize).toVf2d(),
+            tileSize.toVf2d()
         )
 
         // 6) Draw selection "tile cube"

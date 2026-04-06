@@ -16,7 +16,7 @@ kotlin {
     sourceSets {
         val nativeMain by getting {
             dependencies {
-                // no additional dependencies
+                implementation(project(":engine"))
             }
         }
         val nativeTest by getting {
@@ -31,5 +31,11 @@ kotlin {
         }
     }
 
-    hostTarget
+    hostTarget.apply {
+        binaries {
+            executable("VermisDemo") {
+                entryPoint = "game.vermis.main"
+            }
+        }
+    }
 }

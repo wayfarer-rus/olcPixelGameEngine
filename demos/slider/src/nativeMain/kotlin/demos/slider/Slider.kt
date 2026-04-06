@@ -46,7 +46,7 @@ class Slider(
         // movable block position
         val blockPosition = getBlockPosition(x, y, Orientation.HORIZONTAL)
         val color = if (isHeld) Pixel.YELLOW else p
-        engine.fillRect(Vi2d(blockPosition.first), Vi2d(blockPosition.second), color)
+        engine.fillRect(Vi2d(blockPosition.first.xi, blockPosition.first.yi), Vi2d(blockPosition.second.xi, blockPosition.second.yi), color)
     }
 
     fun drawVertical(x: Int, y: Int, p: Pixel) {
@@ -72,7 +72,7 @@ class Slider(
         // movable block position
         val blockPosition = getBlockPosition(x, y, Orientation.VERTICAL)
         val color = if (isHeld) Pixel.YELLOW else p
-        engine.fillRect(Vi2d(blockPosition.first), Vi2d(blockPosition.second), color)
+        engine.fillRect(Vi2d(blockPosition.first.xi, blockPosition.first.yi), Vi2d(blockPosition.second.xi, blockPosition.second.yi), color)
     }
 
     fun getBlockPosition(x: Int, y: Int, orientation: Orientation): Pair<Vf2d, Vf2d> {
@@ -80,15 +80,15 @@ class Slider(
             Orientation.HORIZONTAL -> {
                 val startPosition = Vf2d(x + width / 2f, y - width / 2f) // top-left corner
                 val size = Vf2d(width / 2f, width.toFloat())
-                startPosition.x += (length - 3 * (width / 2f)) * position
-                Pair(startPosition, size)
+                val adjusted = Vf2d(startPosition.x + (length - 3 * (width / 2f)) * position, startPosition.y)
+                Pair(adjusted, size)
             }
 
             Orientation.VERTICAL -> {
                 val startPosition = Vf2d(x - width / 2f, y + width / 2f) // top-left corner
                 val size = Vf2d(width.toFloat(), width / 2f)
-                startPosition.y += (length - 3 * (width / 2f)) * position
-                Pair(startPosition, size)
+                val adjusted = Vf2d(startPosition.x, startPosition.y + (length - 3 * (width / 2f)) * position)
+                Pair(adjusted, size)
             }
         }
     }

@@ -61,21 +61,20 @@ value class Pixel(val n: UInt = 0xFF000000u) {
         get() = a.toFloat()
 
     val r: UByte
-        get() {
-            return (0x000000FFu and n).toUByte()
-        }
+        get() = (n and 0x000000FFu).toUByte()
     val g: UByte
-        get() {
-            return (0x0000FF00u and n shr 8).toUByte()
-        }
+        get() = (n shr 8 and 0xFFu).toUByte()
     val b: UByte
-        get() {
-            return (0x00FF0000u and n shr 16).toUByte()
-        }
+        get() = (n shr 16 and 0xFFu).toUByte()
     val a: UByte
-        get() {
-            return (0xFF000000u and n shr 24).toUByte()
-        }
+        get() = (n shr 24).toUByte()
+
+    // Int channel accessors — no UByte boxing, ideal for hot-path math
+    val ri: Int get() = (n and 0x000000FFu).toInt()
+    val gi: Int get() = (n shr 8 and 0xFFu).toInt()
+    val bi: Int get() = (n shr 16 and 0xFFu).toInt()
+    val ai: Int get() = (n shr 24).toInt()
+
     val ni: Int
         get() {
             return n.toInt()

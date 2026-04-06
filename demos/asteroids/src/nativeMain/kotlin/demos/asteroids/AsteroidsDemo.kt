@@ -178,10 +178,10 @@ class AsteroidsDemo : PixelGameEngineImpl() {
             val (nx, ny) = wrapFloatCoordinates(Pair(this.x, this.y))
             this.x = nx; this.y = ny
             // check collision
-            val loc = getDrawTarget().getPixel(this.xi, this.yi)?.n
+            val loc = getDrawTarget().getPixel(this.xi, this.yi).n
             // pixel in current location is not yet drawn.
             // so it either equal to space color or we approximated to the same coordinates
-            if (loc != null && loc != spaceColor && loc != Pixel.WHITE.n) {
+            if (loc != spaceColor && loc != Pixel.WHITE.n) {
                 // hit detected
                 this.dead = true
             }
@@ -206,10 +206,10 @@ class AsteroidsDemo : PixelGameEngineImpl() {
             val (nx, ny) = wrapFloatCoordinates(Pair(it.x, it.y))
             it.x = nx; it.y = ny
             // check collision
-            val loc = getDrawTarget().getPixel(it.xi, it.yi)?.n
+            val loc = getDrawTarget().getPixel(it.xi, it.yi).n
             // pixel in current location is not yet drawn.
             // so it either equal to space color or we approximated to the same coordinates
-            if (loc != null && loc != spaceColor && loc != Pixel.WHITE.n) {
+            if (loc != spaceColor && loc != Pixel.WHITE.n) {
                 // hit detected
                 it.dead = true // kill bullet
 

@@ -225,7 +225,6 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
         fontDecal = null
         olcConstructFontsheet()
         pDefaultDrawTarget = Sprite(nScreenWidth, nScreenHeight)
-        compositedFrame = UIntArray(pDefaultDrawTarget.data.size)
         setDrawTarget(pDefaultDrawTarget)
         return rcode.OK
     }
@@ -343,9 +342,8 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
     }
 
     override fun setPixelBlend(blend: Float) {
-        fBlendFactor = blend
-        if (fBlendFactor < 0.0f) fBlendFactor = 0.0f
-        if (fBlendFactor > 1.0f) fBlendFactor = 1.0f
+        fBlendFactor = blend.coerceIn(0.0f, 1.0f)
+        blendFactor256 = (fBlendFactor * 256).toInt()
     }
 
     override fun setSubPixelOffset(ox: Float, oy: Float) {
@@ -358,20 +356,20 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
         pDrawTarget.apply {
             when (nPixelMode) {
                 Pixel.Mode.NORMAL -> setPixel(x, y, p)
-                Pixel.Mode.MASK -> if (255.toUByte() == p.a) setPixel(x, y, p)
+                Pixel.Mode.MASK -> if (p.ai == 255) setPixel(x, y, p)
                 Pixel.Mode.ALPHA -> {
-                    getPixel(x, y)?.let { d ->
-                        val a = (p.af / 255.0f) * fBlendFactor
-                        val c = 1.0f - a
-                        val r = a * p.rf + c * d.rf
-                        val g = a * p.gf + c * d.gf
-                        val b = a * p.bf + c * d.bf
-                        Pixel(r, g, b)
-                    }?.let { setPixel(x, y, it) }
+                    val d = getPixel(x, y)
+                    if (d.ai == 0 && p.ai == 0) return
+                    val sa = (p.ai * blendFactor256) shr 8
+                    val da = 255 - sa
+                    val r = (p.ri * sa + d.ri * da) / 255
+                    val g = (p.gi * sa + d.gi * da) / 255
+                    val b = (p.bi * sa + d.bi * da) / 255
+                    setPixel(x, y, Pixel(r, g, b))
                 }
 
                 Pixel.Mode.CUSTOM -> this.setPixel(
-                    x, y, getPixel(x, y)?.let { funcPixelMode?.invoke(x, y, p, it) } ?: Pixel(0u)
+                    x, y, funcPixelMode?.invoke(x, y, p, getPixel(x, y)) ?: Pixel(0u)
                 )
             }
         }
@@ -396,7 +394,7 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
                 if (scale > 1) {
                     for (i in 0 until 8)
                         for (j in 0 until 8)
-                            if (fontSprite.getPixel(i + ox * 8, j + oy * 8)!!.r > 0.toUByte())
+                            if (fontSprite.getPixelUnchecked(i + ox * 8, j + oy * 8).ri > 0)
                                 for (`is` in 0 until scale)
                                     for (js in 0 until scale)
                                         draw(
@@ -407,7 +405,7 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
                 } else {
                     for (i in 0 until 8)
                         for (j in 0 until 8)
-                            if (fontSprite.getPixel(i + ox * 8, j + oy * 8)!!.r > 0.toUByte())
+                            if (fontSprite.getPixelUnchecked(i + ox * 8, j + oy * 8).ri > 0)
                                 draw(x + sx + i, y + sy + j, col)
                 }
                 sx += 8 * scale
@@ -620,18 +618,20 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
     override fun drawSprite(x: Int, y: Int, sprite: Sprite, scale: Int) {
         if (scale > 1) {
             for (i in 0 until sprite.width)
-                for (j in 0 until sprite.height)
+                for (j in 0 until sprite.height) {
+                    val p = sprite.getPixelUnchecked(i, j)
                     for (`is` in 0 until scale)
                         for (js in 0 until scale)
                             draw(
                                 x + (i * scale) + `is`,
                                 y + (j * scale) + js,
-                                sprite.getPixel(i, j)!!
+                                p
                             )
+                }
         } else {
             for (i in 0 until sprite.width)
                 for (j in 0 until sprite.height)
-                    draw(x + i, y + j, sprite.getPixel(i, j)!!)
+                    draw(x + i, y + j, sprite.getPixelUnchecked(i, j))
         }
     }
 
@@ -661,20 +661,23 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
                 }
             }
         } else {
-            // some kind of blending enabled...
-            // performance will degrade
+            // some kind of blending enabled
             if (scale > 1) {
                 for (i in 0 until w)
-                    for (j in 0 until h)
+                    for (j in 0 until h) {
+                        val p = sprite.getPixelUnchecked(i + ox, j + oy)
+                        if (p.ai == 0) continue
                         for (`is` in 0 until scale)
                             for (js in 0 until scale)
-                                sprite.getPixel(i + ox, j + oy)?.let {
-                                    draw(x + (i * scale) + `is`, y + (j * scale) + js, it)
-                                }
+                                draw(x + (i * scale) + `is`, y + (j * scale) + js, p)
+                    }
             } else {
                 for (i in 0 until w)
-                    for (j in 0 until h)
-                        sprite.getPixel(i + ox, j + oy)?.let { draw(x + i, y + j, it) }
+                    for (j in 0 until h) {
+                        val p = sprite.getPixelUnchecked(i + ox, j + oy)
+                        if (p.ai == 0) continue
+                        draw(x + i, y + j, p)
+                    }
             }
         }
     }
@@ -727,8 +730,8 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
                 val srcCol = srcX + floor((dx * invScaleX).toDouble()).toInt()
                 if (srcCol !in srcX until (srcX + srcW)) continue
                 val destX = floor((originX + dx * dirX).toDouble()).toInt()
-                val pixel = sprite.getPixel(srcCol, srcRow) ?: continue
-                if (pixel.a.toInt() == 0) continue
+                val pixel = sprite.getPixel(srcCol, srcRow)
+                if (pixel.ai == 0) continue
                 draw(destX, destY, applyTint(pixel, tint))
             }
         }
@@ -843,6 +846,7 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
         val sprite = Sprite(nScreenWidth, nScreenHeight)
         layers.add(sprite)
         layerVisible.add(true)
+        layerTextures.add(createLayerTexture(nScreenWidth, nScreenHeight))
         return layers.size // zero is reserved for default layer
     }
 
@@ -850,8 +854,10 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
         if (layerId <= 0) return
         val idx = layerId - 1
         if (idx !in layers.indices) return
+        deleteGlTexture(layerTextures[idx])
         layers.removeAt(idx)
         layerVisible.removeAt(idx)
+        layerTextures.removeAt(idx)
         when {
             currentLayerIndex == idx -> resetDrawTarget()
             currentLayerIndex > idx -> currentLayerIndex--
@@ -900,8 +906,8 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
                 val srcX = floor((source_pos.x + localX).toDouble()).toInt()
                 val srcY = floor((source_pos.y + localY).toDouble()).toInt()
                 if (srcX !in 0 until sprite.width || srcY !in 0 until sprite.height) continue
-                val pixel = sprite.getPixel(srcX, srcY) ?: continue
-                if (pixel.a.toInt() == 0) continue
+                val pixel = sprite.getPixel(srcX, srcY)
+                if (pixel.ai == 0) continue
                 draw(destX, destY, applyTint(pixel, tint))
             }
         }
@@ -950,67 +956,46 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
         minY: Int,
         maxY: Int
     ) {
-        val area = (p1.x - p0.x) * (p2.y - p0.y) - (p2.x - p0.x) * (p1.y - p0.y)
-        if (abs(area) < 1e-6f) return
+        // Precompute barycentric invariants (computed once, used per-pixel)
+        val denom = (p1.y - p2.y) * (p0.x - p2.x) + (p2.x - p1.x) * (p0.y - p2.y)
+        if (abs(denom) < 1e-6f) return
+        val invDenom = 1f / denom
+        val dy12 = p1.y - p2.y
+        val dx21 = p2.x - p1.x
+        val dy20 = p2.y - p0.y
+        val dx02 = p0.x - p2.x
 
         for (y in minY..maxY) {
+            val py = y + 0.5f - p2.y
             for (x in minX..maxX) {
-                val bary = barycentric(p0, p1, p2, x + 0.5f, y + 0.5f) ?: continue
-                val u = uv0.x * bary.first + uv1.x * bary.second + uv2.x * bary.third
-                val v = uv0.y * bary.first + uv1.y * bary.second + uv2.y * bary.third
+                val px = x + 0.5f - p2.x
+                val w1 = (dy12 * px + dx21 * py) * invDenom
+                val w2 = (dy20 * px + dx02 * py) * invDenom
+                val w3 = 1f - w1 - w2
+                if (w1 < 0f || w2 < 0f || w3 < 0f) continue
+
+                val u = uv0.x * w1 + uv1.x * w2 + uv2.x * w3
+                val v = uv0.y * w1 + uv1.y * w2 + uv2.y * w3
 
                 val sampleX = floor((u * sprite.width).toDouble()).toInt()
                 val sampleY = floor((v * sprite.height).toDouble()).toInt()
                 if (sampleX !in 0 until sprite.width || sampleY !in 0 until sprite.height) continue
 
-                val pixel = sprite.getPixel(sampleX, sampleY) ?: continue
-                if (pixel.a.toInt() == 0) continue
+                val pixel = sprite.getPixel(sampleX, sampleY)
+                if (pixel.ai == 0) continue
                 draw(x, y, applyTint(pixel, tint))
             }
         }
     }
 
-    private fun barycentric(p0: Vf2d, p1: Vf2d, p2: Vf2d, px: Float, py: Float): Triple<Float, Float, Float>? {
-        val denom = (p1.y - p2.y) * (p0.x - p2.x) + (p2.x - p1.x) * (p0.y - p2.y)
-        if (abs(denom) < 1e-6f) return null
-        val w1 = ((p1.y - p2.y) * (px - p2.x) + (p2.x - p1.x) * (py - p2.y)) / denom
-        val w2 = ((p2.y - p0.y) * (px - p2.x) + (p0.x - p2.x) * (py - p2.y)) / denom
-        val w3 = 1f - w1 - w2
-        if (w1 < 0f || w2 < 0f || w3 < 0f) return null
-        return Triple(w1, w2, w3)
-    }
-
     private fun applyTint(source: Pixel, tint: Pixel): Pixel {
         if (tint == Pixel.WHITE) return source
-        val r = (source.rf * tint.rf / 255f).roundToInt().coerceIn(0, 255)
-        val g = (source.gf * tint.gf / 255f).roundToInt().coerceIn(0, 255)
-        val b = (source.bf * tint.bf / 255f).roundToInt().coerceIn(0, 255)
-        val a = (source.af * tint.af / 255f).roundToInt().coerceIn(0, 255)
+        val r = (source.ri * tint.ri) / 255
+        val g = (source.gi * tint.gi) / 255
+        val b = (source.bi * tint.bi) / 255
+        val a = (source.ai * tint.ai) / 255
         return Pixel(r, g, b, a)
     }
-
-    private fun buildFrameBuffer(): UIntArray {
-        if (compositedFrame.size != pDefaultDrawTarget.data.size) {
-            compositedFrame = UIntArray(pDefaultDrawTarget.data.size)
-        }
-        pDefaultDrawTarget.data.copyInto(compositedFrame)
-        for (index in layers.indices) {
-            if (index >= layerVisible.size) continue
-            if (!layerVisible[index]) continue
-            blendLayerIntoFrame(layers[index], compositedFrame)
-        }
-        return compositedFrame
-    }
-
-    private fun blendLayerIntoFrame(layerSprite: Sprite, target: UIntArray) {
-        val src = layerSprite.data
-        for (idx in src.indices) {
-            val pixel = Pixel(src[idx])
-            if (pixel.a.toInt() == 0) continue
-            target[idx] = pixel.n
-        }
-    }
-
 
     // main loop
     private fun engineMainLoop() {
@@ -1080,29 +1065,45 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
             if (!onUserUpdate(elapsedTime))
                 bAtomActive = 0
 
-            // Copy pixel array into texture
-            glActiveTexture(GL_TEXTURE0.toUInt())
-            glBindTexture(GL_TEXTURE_2D.toUInt(), glBuffer)
+            // GPU-side layer compositing with alpha blending
+            glEnable(GL_BLEND.toUInt())
+            glBlendFunc(GL_SRC_ALPHA.toUInt(), GL_ONE_MINUS_SRC_ALPHA.toUInt())
 
-            val frame = buildFrameBuffer()
-            frame.usePinned {
+            glActiveTexture(GL_TEXTURE0.toUInt())
+            glUniform1i(texID, 0)
+            glBindVertexArray(vertexArrayID)
+
+            // Draw base layer (layer 0)
+            glBindTexture(GL_TEXTURE_2D.toUInt(), glBaseTexture)
+            pDefaultDrawTarget.data.usePinned {
                 glTexSubImage2D(
-                    GL_TEXTURE_2D.toUInt(),
-                    0,
-                    0,
-                    0,
-                    nScreenWidth,
-                    nScreenHeight,
-                    GL_RGBA.toUInt(),
-                    GL_UNSIGNED_BYTE.toUInt(),
+                    GL_TEXTURE_2D.toUInt(), 0, 0, 0,
+                    nScreenWidth, nScreenHeight,
+                    GL_RGBA.toUInt(), GL_UNSIGNED_BYTE.toUInt(),
                     it.addressOf(0)
                 )
             }
-
-            glUniform1i(texID, 0)
-            glBindVertexArray(vertexArrayID)
             glDrawArrays(GL_TRIANGLES.toUInt(), 0, 6)
+
+            // Draw overlay layers back-to-front
+            for (index in layers.indices) {
+                if (index >= layerVisible.size) continue
+                if (!layerVisible[index]) continue
+
+                glBindTexture(GL_TEXTURE_2D.toUInt(), layerTextures[index])
+                layers[index].data.usePinned {
+                    glTexSubImage2D(
+                        GL_TEXTURE_2D.toUInt(), 0, 0, 0,
+                        nScreenWidth, nScreenHeight,
+                        GL_RGBA.toUInt(), GL_UNSIGNED_BYTE.toUInt(),
+                        it.addressOf(0)
+                    )
+                }
+                glDrawArrays(GL_TRIANGLES.toUInt(), 0, 6)
+            }
+
             glBindVertexArray(0u)
+            glDisable(GL_BLEND.toUInt())
 
             glfwPollEvents()
             glfwSwapBuffers(windowPtr)
@@ -1245,35 +1246,39 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
         buffer.decodeToString().trimEnd('\u0000')
     }
 
-    private fun olcOpenGlCreate(): Boolean {
-        println("olc_OpenGLCreate() called")
-
-        // Create Screen Texture - disable filtering
-        glEnable(GL_TEXTURE_2D.toUInt())
-
-        glBuffer = memScoped {
+    private fun createLayerTexture(width: Int, height: Int): UInt {
+        val texId = memScoped {
             val output = alloc<UIntVar>()
             glGenTextures(1, output.ptr)
             output.value
         }
-
-        println("glBuffer = $glBuffer")
-
-        glBindTexture(GL_TEXTURE_2D.toUInt(), glBuffer)
-
-        // this call will create our "canvas" to draw into
+        glBindTexture(GL_TEXTURE_2D.toUInt(), texId)
         glTexImage2D(
             GL_TEXTURE_2D.toUInt(), 0, GL_RGBA,
-            nScreenWidth,
-            nScreenHeight,
-            0, GL_RGBA.toUInt(), GL_UNSIGNED_BYTE.toUInt(),
-            this.pDefaultDrawTarget.data.toCValues()
+            width, height, 0,
+            GL_RGBA.toUInt(), GL_UNSIGNED_BYTE.toUInt(), null
         )
-
         glTexParameteri(GL_TEXTURE_2D.toUInt(), GL_TEXTURE_MAG_FILTER.toUInt(), GL_NEAREST)
         glTexParameteri(GL_TEXTURE_2D.toUInt(), GL_TEXTURE_MIN_FILTER.toUInt(), GL_NEAREST)
+        return texId
+    }
 
-        // more configuration
+    private fun deleteGlTexture(texId: UInt) {
+        memScoped {
+            val t = alloc<UIntVar>()
+            t.value = texId
+            glDeleteTextures(1, t.ptr)
+        }
+    }
+
+    private fun olcOpenGlCreate(): Boolean {
+        println("olc_OpenGLCreate() called")
+
+        glEnable(GL_TEXTURE_2D.toUInt())
+
+        glBaseTexture = createLayerTexture(nScreenWidth, nScreenHeight)
+        println("glBaseTexture = $glBaseTexture")
+
         programId = olcLoadShaders()
 
         println("olc_OpenGLCreate() return")
@@ -1443,18 +1448,19 @@ abstract class PixelGameEngineImpl : PixelGameEngine {
 
     private var window: CPointer<GLFWwindow>? = null
     private var programId: UInt = 0u
-    private var glBuffer = 0u
+    private var glBaseTexture: UInt = 0u
     private lateinit var pDefaultDrawTarget: Sprite
     private lateinit var pDrawTarget: Sprite
     private val decals = mutableMapOf<UInt, Decal>()
     private var nextDecalId: UInt = 1u
     private val layers: MutableList<Sprite> = mutableListOf()
     private val layerVisible: MutableList<Boolean> = mutableListOf()
+    private val layerTextures: MutableList<UInt> = mutableListOf()
     private var currentLayerIndex: Int = -1
-    private var compositedFrame: UIntArray = UIntArray(0)
     private var fontDecal: Decal? = null
     private var nPixelMode = Pixel.Mode.NORMAL
     private var fBlendFactor: Float = 1.0f
+    private var blendFactor256: Int = 256
     private var nScreenWidth: Int = 256
     private var nScreenHeight: Int = 240
     private var nPixelWidth: Int = 4

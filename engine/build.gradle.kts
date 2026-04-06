@@ -11,7 +11,7 @@ kotlin {
 
     val hostOs = System.getProperty("os.name")
     val hostTarget = when {
-        hostOs == "Mac OS X" -> macosX64()
+        hostOs == "Mac OS X" -> macosArm64()
         hostOs == "Linux" -> linuxX64()
         hostOs.startsWith("Windows") -> mingwX64()
         else -> error("Host OS '$hostOs' is not supported for Kotlin/Native.")
@@ -39,7 +39,7 @@ kotlin {
     hostTarget.apply {
         compilations["main"].cinterops {
             val glfwHeaderDirs: List<Any> = when (konanTarget.family) {
-                Family.OSX -> listOf("/opt/local/include", "/usr/local/include")
+                Family.OSX -> listOf("/opt/local/include", "/usr/local/include", "/opt/homebrew/include")
                 Family.LINUX -> listOf("/usr/include", "/usr/include/x86_64-linux-gnu")
                 Family.MINGW -> listOf(mingwPath.resolve("include"))
                 else -> emptyList()
