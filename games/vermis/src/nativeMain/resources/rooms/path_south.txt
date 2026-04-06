@@ -1,12 +1,11 @@
 # The Path South (D: 20x11)
 # W = stone wall
-# C = cracked wall (impassable, needs mace)
 # . = interactable (graves, path markers)
 # = = dirt path
 #   = floor
 WWWWWWWWWWWWWWWWWWWW
 W          =       W
-C          =       W
+W          =       W
 W    .     =       W
 W       .  =    .  W
 W          =       W

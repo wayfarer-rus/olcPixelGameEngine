@@ -1,6 +1,7 @@
 package game.vermis
 
 import olc.game_engine.PixelGameEngine
+import olc.game_engine.Sprite
 
 enum class Layer {
   BEHIND_BACKGROUND,
@@ -13,20 +14,23 @@ enum class Layer {
 
 object LayersMap: Map<Layer, Int> {
   private val layers = mutableMapOf<Layer, Int>()
+  private val sprites = mutableMapOf<Layer, Sprite>()
 
   fun initLayers(e: PixelGameEngine) {
-    layers[Layer.BEHIND_BACKGROUND] = e.createLayer()
-    layers[Layer.BACKGROUND] = e.createLayer()
-    layers[Layer.INTERACTABLE] = e.createLayer()
-    layers[Layer.PLAYER] = e.createLayer()
-    layers[Layer.FOREGROUND] = e.createLayer()
-    layers[Layer.OVERLAY_DEBUG] = e.createLayer()
+    for (layer in Layer.entries) {
+      val id = e.createLayer()
+      layers[layer] = id
+      e.setDrawTarget(id)
+      sprites[layer] = e.getDrawTarget()
+    }
   }
 
-  override val size: Int = layers.size
-  override val keys: Set<Layer> = layers.keys
-  override val values: Collection<Int> = layers.values
-  override val entries: Set<Map.Entry<Layer, Int>> = layers.entries
+  fun sprite(layer: Layer): Sprite = sprites[layer]!!
+
+  override val size: Int get() = layers.size
+  override val keys: Set<Layer> get() = layers.keys
+  override val values: Collection<Int> get() = layers.values
+  override val entries: Set<Map.Entry<Layer, Int>> get() = layers.entries
 
   override fun isEmpty(): Boolean = layers.isEmpty()
   override fun containsKey(key: Layer): Boolean = layers.containsKey(key)

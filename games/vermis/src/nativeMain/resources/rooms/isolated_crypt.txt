@@ -2,11 +2,12 @@
 # W = stone wall
 # D = doorway (exit east)
 # . = interactable (brazier, slab, shelf)
+# X = player's start position
 #   = floor
 WWWWWWWWW
 W ....  W
 W       W
 W . ..  W
-W       W
+W   X   W
 W       D
 WWWWWWWWW

@@ -5,7 +5,6 @@ import olc.game_engine.Key
 import olc.game_engine.Pixel
 import olc.game_engine.PixelGameEngineImpl
 import olc.game_engine.RetCode
-import olc.game_engine.Vi2d
 
 class Vermis : PixelGameEngineImpl() {
   override val appName = "Vermis"
@@ -15,26 +14,34 @@ class Vermis : PixelGameEngineImpl() {
   override fun onUserCreate(): Boolean {
     LayersMap.initLayers(this)
     Player.initPlayer(this)
+    Player.placeAt(GreenGrave.rooms[0], this)
     return true
   }
 
   override fun onUserUpdate(elapsedTime: Float): Boolean {
     if (getKey(Key.SHIFT).bPressed) {
       currentRoomIndex = (currentRoomIndex + 1) % GreenGrave.rooms.size
+      Player.placeAt(GreenGrave.rooms[currentRoomIndex], this)
     }
 
-    LayersMap.entries.forEach { (layer, target) ->
+    // Clear all layers
+    LayersMap.entries.forEach { (_, target) ->
       setDrawTarget(target)
       clear(Pixel.BLANK)
     }
 
+    // Draw room (populates INTERACTABLE layer with collision sprites)
     GreenGrave.rooms[currentRoomIndex].draw(this)
 
-    // draw player's sprite
-    Player.drawPlayer(this, Vi2d(100, 100))
+    // Update player (reads INTERACTABLE layer for collision)
+    Player.update(this, elapsedTime)
 
+    // Draw player
+    Player.drawPlayer(this)
+
+    // Debug overlay
     setDrawTarget(LayersMap[Layer.OVERLAY_DEBUG])
-    drawString(0, 0, GreenGrave.roomNames[currentRoomIndex])
+    drawString(0, 0, GreenGrave.rooms[currentRoomIndex].name)
     return true
   }
 }

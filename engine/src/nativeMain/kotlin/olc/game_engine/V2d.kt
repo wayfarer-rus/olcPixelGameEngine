@@ -48,6 +48,7 @@ value class Vf2d(val packed: Long) {
 }
 
 fun Vf2d.toVd2d() = Vd2d(x.toDouble(), y.toDouble())
+fun Vf2d.toVi2d() = Vi2d(x.toInt(), y.toInt())
 fun Vi2d.toVf2d() = Vf2d(x.toFloat(), y.toFloat())
 fun Vd2d.toVf2d() = Vf2d(x.toFloat(), y.toFloat())
 

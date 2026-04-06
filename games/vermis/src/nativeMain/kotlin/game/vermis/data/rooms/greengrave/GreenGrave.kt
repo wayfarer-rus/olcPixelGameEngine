@@ -1,6 +1,6 @@
 package game.vermis.data.rooms.greengrave
 
-import game.vermis.Drawable
+import game.vermis.Room
 
 enum class Direction { N, S, E, W }
 
@@ -18,15 +18,7 @@ object GreenGrave {
   val BuriedShrine = BuriedShrine()
   val PathSouth = PathSouth()
 
-  val rooms: List<Drawable> = listOf(IsolatedCrypt, Exterior, RootCave, BuriedShrine, PathSouth)
-
-  val roomNames: List<String> = listOf(
-    IsolatedCrypt.name,
-    Exterior.name,
-    RootCave.name,
-    BuriedShrine.name,
-    PathSouth.name,
-  )
+  val rooms: List<Room> = listOf(IsolatedCrypt, Exterior, RootCave, BuriedShrine, PathSouth)
 
   val connections: List<Connection> = listOf(
     Connection("isolated_crypt", "exterior", Direction.E),

@@ -1,57 +1,52 @@
 package game.vermis.data.rooms.greengrave
 
-import game.vermis.Drawable
 import game.vermis.Layer
 import game.vermis.LayersMap
+import game.vermis.Room
 import game.vermis.TILE_SIZE
+import game.vermis.isTraversable
 import game.vermis.data.rooms.roomLayoutToString
 import olc.game_engine.Pixel
 import olc.game_engine.PixelGameEngine
 import olc.game_engine.Vi2d
 
-class Exterior : Drawable {
-  val name = "exterior"
+class Exterior : Room {
+  override val name = "exterior"
 
   private val roomLayoutPath = "resources/rooms/exterior.txt"
-  private val roomLayout: Array<CharArray> by lazy {
+  override val roomLayout: Array<CharArray> by lazy {
     val fileContent = roomLayoutToString(roomLayoutPath)
     fileContent.split("\n").map { it.toCharArray() }.toTypedArray()
   }
 
+  override fun screenOffset(e: PixelGameEngine): Vi2d {
+    val screenCenter = Vi2d(e.screenWidth() / 2, e.screenHeight() / 2)
+    val roomCenter = Vi2d(roomLayout.first().size * TILE_SIZE.x / 2, roomLayout.size * TILE_SIZE.y / 2)
+    return screenCenter - roomCenter
+  }
+
   override fun draw(e: PixelGameEngine) {
     val size = TILE_SIZE
-
-    val screenCenter = Vi2d(e.screenWidth() / 2, e.screenHeight() / 2)
-    val roomCenter = Vi2d(roomLayout.first().size * size.x / 2, roomLayout.size * size.y / 2)
-    val offset = screenCenter - roomCenter
+    val offset = screenOffset(e)
     var pos = offset
 
     for (line in roomLayout) {
       for (c in line) {
-        when (c) {
-          'T' -> {
-            e.setDrawTarget(LayersMap[Layer.BACKGROUND])
-            e.fillRect(pos, size, Pixel.DARK_GREEN)
+        if (!isTraversable(c)) {
+          e.setDrawTarget(LayersMap[Layer.INTERACTABLE])
+          val color = when (c) {
+            'T' -> Pixel.DARK_GREEN
+            'C' -> Pixel.DARK_GREY
+            '.' -> Pixel.YELLOW
+            'R' -> Pixel.DARK_YELLOW
+            else -> Pixel.DARK_GREY
           }
-          'D' -> {
-            e.setDrawTarget(LayersMap[Layer.INTERACTABLE])
-            e.fillRect(pos, size, Pixel.GREEN)
-          }
-          'R' -> {
-            e.setDrawTarget(LayersMap[Layer.INTERACTABLE])
-            e.fillRect(pos, size, Pixel.DARK_YELLOW)
-          }
-          'C' -> {
-            e.setDrawTarget(LayersMap[Layer.INTERACTABLE])
-            e.fillRect(pos, size, Pixel.DARK_GREY)
-          }
-          '.' -> {
-            e.setDrawTarget(LayersMap[Layer.INTERACTABLE])
-            e.fillRect(pos, size, Pixel.YELLOW)
-          }
-          else -> {
-            e.setDrawTarget(LayersMap[Layer.BACKGROUND])
-            e.drawRect(pos, size, Pixel.DARK_GREY)
+          e.fillRect(pos, size, color)
+        } else {
+          e.setDrawTarget(LayersMap[Layer.BACKGROUND])
+          when (c) {
+            'D' -> e.fillRect(pos, size, Pixel.GREEN)
+            else -> e.drawRect(pos, size, Pixel.DARK_GREY)
           }
         }
         pos = Vi2d(pos.x + size.x, pos.y)
