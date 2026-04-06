@@ -1,9 +1,10 @@
 # The Path South (D: 20x11)
 # W = stone wall
+# D = doorway (to exterior)
 # . = interactable (graves, path markers)
 # = = dirt path
 #   = floor
-WWWWWWWWWWWWWWWWWWWW
+WWWWWWWWWWDWWWWWWWWW
 W          =       W
 W          =       W
 W    .     =       W

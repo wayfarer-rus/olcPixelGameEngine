@@ -1,11 +1,11 @@
 # Greengrave Exterior (D: 20x11)
 # T = tree / forest border
-# D = doorway (to isolated crypt)
-# R = root-cave entrance
-# C = cracked wall (impassable, needs mace)
+# D = doorway (to isolated crypt / path south)
+# E = entrance (root-cave)
+# C = cracked wall (secret passage to buried shrine, impassable until activated)
 # . = interactable (statue, well, graves)
 #   = floor
-TTTTTTTTTTTRTTTTTTTT
+TTTTTTTTTTTETTTTTTTT
 T  ....      .     T
 T  ....            T
 T  ....            T
@@ -15,4 +15,4 @@ C                  T
 T       ..         T
 T    .       .     T
 D      .       .   T
-TTTTTTTTTTTTTTTTTTTT
+TTTTTTTTTTDTTTTTTTTT

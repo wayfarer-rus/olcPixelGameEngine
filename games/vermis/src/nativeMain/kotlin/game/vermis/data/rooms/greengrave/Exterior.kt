@@ -42,14 +42,13 @@ class Exterior : Room {
             'T' -> Pixel.DARK_GREEN
             'C' -> Pixel.DARK_GREY
             '.' -> Pixel.YELLOW
-            'R' -> Pixel.DARK_YELLOW
             else -> Pixel.DARK_GREY
           }
           e.fillRect(pos, size, color)
         } else {
           e.setDrawTarget(LayersMap[Layer.BACKGROUND])
           when (c) {
-            'D' -> e.fillRect(pos, size, Pixel.GREEN)
+            'D', 'E' -> e.fillRect(pos, size, Pixel.GREEN)
             else -> e.drawRect(pos, size, Pixel.DARK_GREY)
           }
         }
