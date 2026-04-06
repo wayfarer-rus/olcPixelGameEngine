@@ -1,0 +1,14 @@
+# Buried Shrine (S: 14x9)
+# W = stone wall
+# D = doorway (exit east, back to exterior)
+# . = interactable (Gurrek's Tear pedestal)
+#   = floor
+WWWWWWWWWWWWWW
+W            W
+W            W
+W     ..     W
+W            W
+W            W
+W            W
+W            D
+WWWWWWWWWWWWWW

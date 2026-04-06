@@ -1,0 +1,16 @@
+# Root Cave (D: 20x11)
+# R = root / rock wall (organic, irregular)
+# E = exit (south, back to exterior)
+# . = interactable (pedestal with Devotion Token)
+#   = floor
+RRRRRRRRRRRRRRRRRRRR
+R                  R
+R                  R
+R                  R
+R        ..        R
+R                  R
+R                  R
+R                  R
+R                  R
+R                  R
+RRRRRRRRRERRRRRRRRRR

@@ -124,6 +124,7 @@ interface PixelGameEngine {
         drawCircle(pos.x, pos.y, radius, p, mask)
 
     fun fillCircle(x: Int, y: Int, radius: Int, p: Pixel = Pixel.WHITE)
+    fun fillCircle(pos: Vi2d, radius: Int, p: Pixel = Pixel.WHITE) = fillCircle(pos.x, pos.y, radius, p)
     fun drawRect(x: Int, y: Int, w: Int, h: Int, p: Pixel = Pixel.WHITE)
     fun drawRect(pos: Vi2d, size: Vi2d, p: Pixel = Pixel.WHITE) = drawRect(pos.x, pos.y, size.x, size.y, p)
     fun fillRect(x: Int, y: Int, w: Int, h: Int, p: Pixel = Pixel.WHITE)

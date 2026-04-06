@@ -1,3 +1,8 @@
+# Isolated Crypt (S: 9x7)
+# W = stone wall
+# D = doorway (exit east)
+# . = interactable (brazier, slab, shelf)
+#   = floor
 WWWWWWWWW
 W ....  W
 W       W

@@ -20,7 +20,10 @@ fun roomLayoutToString(pathToFile: String): String {
     val content = StringBuilder()
     val buffer = ByteArray(1024)
     while (fgets(buffer.refTo(0), buffer.size, file) != null) {
-      content.append(buffer.toKString())
+      val line = buffer.toKString()
+      if (!line.startsWith("#")) {
+        content.append(line)
+      }
     }
     fclose(file)
     content.toString()

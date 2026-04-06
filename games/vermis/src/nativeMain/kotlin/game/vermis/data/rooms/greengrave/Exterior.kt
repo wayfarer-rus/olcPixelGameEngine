@@ -9,10 +9,10 @@ import olc.game_engine.Pixel
 import olc.game_engine.PixelGameEngine
 import olc.game_engine.Vi2d
 
-class IsolatedCrypt : Drawable {
-  val name = "isolated_crypt"
+class Exterior : Drawable {
+  val name = "exterior"
 
-  private val roomLayoutPath = "resources/rooms/isolated_crypt.txt"
+  private val roomLayoutPath = "resources/rooms/exterior.txt"
   private val roomLayout: Array<CharArray> by lazy {
     val fileContent = roomLayoutToString(roomLayoutPath)
     fileContent.split("\n").map { it.toCharArray() }.toTypedArray()
@@ -21,36 +21,41 @@ class IsolatedCrypt : Drawable {
   override fun draw(e: PixelGameEngine) {
     val size = TILE_SIZE
 
-    // calculate position
     val screenCenter = Vi2d(e.screenWidth() / 2, e.screenHeight() / 2)
-    val roomCenter = Vi2d(roomLayout.first().size * size.x /2, roomLayout.size * size.y /2)
+    val roomCenter = Vi2d(roomLayout.first().size * size.x / 2, roomLayout.size * size.y / 2)
     val offset = screenCenter - roomCenter
     var pos = offset
 
     for (line in roomLayout) {
       for (c in line) {
         when (c) {
-          'W' -> {
+          'T' -> {
             e.setDrawTarget(LayersMap[Layer.BACKGROUND])
-            e.fillRect(pos, size, Pixel.WHITE)
-          }
-          '.' -> {
-            e.setDrawTarget(LayersMap[Layer.INTERACTABLE])
-            e.fillRect(pos, size, Pixel.YELLOW)
+            e.fillRect(pos, size, Pixel.DARK_GREEN)
           }
           'D' -> {
             e.setDrawTarget(LayersMap[Layer.INTERACTABLE])
             e.fillRect(pos, size, Pixel.GREEN)
+          }
+          'R' -> {
+            e.setDrawTarget(LayersMap[Layer.INTERACTABLE])
+            e.fillRect(pos, size, Pixel.DARK_YELLOW)
+          }
+          'C' -> {
+            e.setDrawTarget(LayersMap[Layer.INTERACTABLE])
+            e.fillRect(pos, size, Pixel.DARK_GREY)
+          }
+          '.' -> {
+            e.setDrawTarget(LayersMap[Layer.INTERACTABLE])
+            e.fillRect(pos, size, Pixel.YELLOW)
           }
           else -> {
             e.setDrawTarget(LayersMap[Layer.BACKGROUND])
             e.drawRect(pos, size, Pixel.DARK_GREY)
           }
         }
-        // move X
         pos = Vi2d(pos.x + size.x, pos.y)
       }
-      // reset X, move Y
       pos = Vi2d(offset.x, pos.y + size.y)
     }
   }

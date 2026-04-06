@@ -76,6 +76,8 @@ open class Sprite @ExperimentalUnsignedTypes constructor(var data: UIntArray = U
         height = h
     }
 
+    constructor(size: Vi2d) : this(size.x, size.y)
+
     fun setSampleMode(mode: Mode) {
         modeSample = mode
     }
