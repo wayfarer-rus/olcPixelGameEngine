@@ -2,13 +2,11 @@ package game.vermis.data.rooms
 
 import kotlinx.cinterop.refTo
 import kotlinx.cinterop.toKString
-import platform.posix.F_OK
-import platform.posix.access
-import platform.posix.fclose
-import platform.posix.fgets
-import platform.posix.fopen
+import platform.posix.*
 
-const val RESOURCES_ROOT_PATH = "/Users/andrei.efimov/IdeaProjects/my/olcPixelGameEngine/games/vermis/build/bin/macosArm64/VermisDemoDebugExecutable"
+//const val RESOURCES_ROOT_PATH = "/Users/andrei.efimov/IdeaProjects/my/olcPixelGameEngine/games/vermis/build/bin/macosArm64/VermisDemoDebugExecutable"
+const val RESOURCES_ROOT_PATH =
+  "/Users/wayfarer/workspace/GIT/olcGameEnginePort/games/vermis/build/bin/macosArm64/VermisDemoDebugExecutable"
 
 fun localPathToAbsolute(path: String): String = "$RESOURCES_ROOT_PATH/$path"
 

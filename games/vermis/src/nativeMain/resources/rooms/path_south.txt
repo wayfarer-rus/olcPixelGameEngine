@@ -4,7 +4,7 @@
 # . = interactable (graves, path markers)
 # = = dirt path
 #   = floor
-WWWWWWWWWWDWWWWWWWWW
+WWWWWWWWWWDDWWWWWWWW
 W          =       W
 W          =       W
 W    .     =       W

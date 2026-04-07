@@ -1,15 +1,12 @@
 package game.vermis
 
 import game.vermis.data.rooms.DoorTile
+import game.vermis.data.rooms.DoorwayAxis
+import game.vermis.data.rooms.DoorwaySpan
 import game.vermis.data.rooms.localPathToAbsolute
 import geometry_2d.BoundingBox
 import geometry_2d.collidesWithSprite
-import olc.game_engine.Decal
-import olc.game_engine.Key
-import olc.game_engine.PixelGameEngine
-import olc.game_engine.Sprite
-import olc.game_engine.Vf2d
-import olc.game_engine.rcode
+import olc.game_engine.*
 
 enum class PlayerDirection { DOWN, UP, LEFT, RIGHT }
 
@@ -94,6 +91,113 @@ object Player {
     )
   }
 
+  fun doorwayProgress(room: Room, doorway: DoorwaySpan, e: PixelGameEngine): Float {
+    val roomOffset = room.screenOffset(e)
+    val bbox = playerBBox(pos)
+    val centerX = bbox.left + bbox.w / 2f
+    val centerY = bbox.top + bbox.h / 2f
+
+    return when (doorway.axis) {
+      DoorwayAxis.HORIZONTAL -> {
+        val start = roomOffset.x + doorway.tiles.first().col * TILE_SIZE.x
+        val end = roomOffset.x + (doorway.tiles.last().col + 1) * TILE_SIZE.x
+        ((centerX - start) / (end - start)).coerceIn(0f, 1f)
+      }
+
+      DoorwayAxis.VERTICAL -> {
+        val start = roomOffset.y + doorway.tiles.first().row * TILE_SIZE.y
+        val end = roomOffset.y + (doorway.tiles.last().row + 1) * TILE_SIZE.y
+        ((centerY - start) / (end - start)).coerceIn(0f, 1f)
+      }
+    }
+  }
+
+  fun isFullyInsideDoorway(room: Room, doorway: DoorwaySpan, e: PixelGameEngine): Boolean {
+    val roomOffset = room.screenOffset(e)
+    val bbox = playerBBox(pos)
+
+    return when (doorway.axis) {
+      DoorwayAxis.HORIZONTAL -> {
+        val left = roomOffset.x + doorway.tiles.first().col * TILE_SIZE.x
+        val right = roomOffset.x + (doorway.tiles.last().col + 1) * TILE_SIZE.x
+        val top = roomOffset.y + doorway.tiles.first().row * TILE_SIZE.y
+        val bottom = top + TILE_SIZE.y
+        bbox.left >= left && bbox.right <= right && bbox.top >= top && bbox.bottom <= bottom
+      }
+
+      DoorwayAxis.VERTICAL -> {
+        val left = roomOffset.x + doorway.tiles.first().col * TILE_SIZE.x
+        val right = left + TILE_SIZE.x
+        val top = roomOffset.y + doorway.tiles.first().row * TILE_SIZE.y
+        val bottom = roomOffset.y + (doorway.tiles.last().row + 1) * TILE_SIZE.y
+        bbox.left >= left && bbox.right <= right && bbox.top >= top && bbox.bottom <= bottom
+      }
+    }
+  }
+
+  fun placeAtDoorway(
+    room: Room,
+    doorway: DoorwaySpan,
+    direction: game.vermis.data.rooms.Direction,
+    progress: Float,
+    e: PixelGameEngine
+  ) {
+    val roomOffset = room.screenOffset(e)
+    val clampedProgress = progress.coerceIn(0f, 1f)
+
+    pos = when (doorway.axis) {
+      DoorwayAxis.HORIZONTAL -> {
+        val startX = roomOffset.x + doorway.tiles.first().col * TILE_SIZE.x
+        val endX = roomOffset.x + (doorway.tiles.last().col + 1) * TILE_SIZE.x
+        val centerX = when {
+          endX - startX <= BBOX_W -> (startX + endX) / 2f
+          else -> {
+            val minCenterX = startX + BBOX_W / 2f
+            val maxCenterX = endX - BBOX_W / 2f
+            minCenterX + (maxCenterX - minCenterX) * clampedProgress
+          }
+        }
+        val row = doorway.tiles.first().row
+        val spawnY = when (direction) {
+          game.vermis.data.rooms.Direction.S ->
+            (roomOffset.y + (row + 1) * TILE_SIZE.y - BBOX_H / 2f).toFloat()
+
+          game.vermis.data.rooms.Direction.N ->
+            (roomOffset.y + row * TILE_SIZE.y - BBOX_H / 2f).toFloat()
+
+          else ->
+            (roomOffset.y + row * TILE_SIZE.y + (TILE_SIZE.y - BBOX_H) / 2).toFloat()
+        }
+        Vf2d(centerX - BBOX_W / 2f, spawnY)
+      }
+
+      DoorwayAxis.VERTICAL -> {
+        val startY = roomOffset.y + doorway.tiles.first().row * TILE_SIZE.y
+        val endY = roomOffset.y + (doorway.tiles.last().row + 1) * TILE_SIZE.y
+        val centerY = when {
+          endY - startY <= BBOX_H -> (startY + endY) / 2f
+          else -> {
+            val minCenterY = startY + BBOX_H / 2f
+            val maxCenterY = endY - BBOX_H / 2f
+            minCenterY + (maxCenterY - minCenterY) * clampedProgress
+          }
+        }
+        val col = doorway.tiles.first().col
+        val spawnX = when (direction) {
+          game.vermis.data.rooms.Direction.E ->
+            (roomOffset.x + (col + 1) * TILE_SIZE.x - BBOX_W / 2f).toFloat()
+
+          game.vermis.data.rooms.Direction.W ->
+            (roomOffset.x + col * TILE_SIZE.x - BBOX_W / 2f).toFloat()
+
+          else ->
+            (roomOffset.x + col * TILE_SIZE.x + (TILE_SIZE.x - BBOX_W) / 2).toFloat()
+        }
+        Vf2d(spawnX, centerY - BBOX_H / 2f)
+      }
+    }
+  }
+
   fun update(e: PixelGameEngine, elapsedTime: Float) {
     val collisionSurface = LayersMap.sprite(Layer.INTERACTABLE)
 
@@ -120,28 +224,44 @@ object Player {
   }
 
   /**
-   * Check if the player's bounding box is fully inside a D/E tile.
-   * Returns the DoorTile coordinates if so, null otherwise.
+   * Check if the player's inner trigger box overlaps one or more D/E tiles.
+   * Returns the door tile closest to the player's center, or null otherwise.
    */
   fun checkDoorOverlap(room: Room, e: PixelGameEngine): DoorTile? {
     val offset = room.screenOffset(e)
     val bbox = playerBBox(pos)
+    val triggerInset = 1f
+    val sampleLeft = bbox.left + triggerInset
+    val sampleTop = bbox.top + triggerInset
+    val sampleRight = bbox.right - triggerInset
+    val sampleBottom = bbox.bottom - triggerInset
 
-    val centerX = (bbox.left + bbox.right) / 2
-    val centerY = (bbox.top + bbox.bottom) / 2
-    val tileCol = ((centerX - offset.x) / TILE_SIZE.x).toInt()
-    val tileRow = ((centerY - offset.y) / TILE_SIZE.y).toInt()
+    val leftTileCol = ((sampleLeft - offset.x) / TILE_SIZE.x).toInt()
+    val rightTileCol = ((sampleRight - offset.x) / TILE_SIZE.x).toInt()
+    val topTileRow = ((sampleTop - offset.y) / TILE_SIZE.y).toInt()
+    val bottomTileRow = ((sampleBottom - offset.y) / TILE_SIZE.y).toInt()
+    val centerX = (sampleLeft + sampleRight) / 2f
+    val centerY = (sampleTop + sampleBottom) / 2f
 
-    val c = room.roomLayout.getOrNull(tileRow)?.getOrNull(tileCol) ?: return null
-    if (c != 'D' && c != 'E') return null
+    val doorTiles = mutableListOf<DoorTile>()
+    for (row in topTileRow..bottomTileRow) {
+      for (col in leftTileCol..rightTileCol) {
+        val c = room.roomLayout.getOrNull(row)?.getOrNull(col) ?: continue
+        if (c == 'D' || c == 'E') {
+          doorTiles += DoorTile(col, row)
+        }
+      }
+    }
 
-    // Check bbox is fully within this tile
-    val tileLeft = offset.x + tileCol * TILE_SIZE.x
-    val tileTop = offset.y + tileRow * TILE_SIZE.y
-    if (bbox.left < tileLeft || bbox.right > tileLeft + TILE_SIZE.x ||
-      bbox.top < tileTop || bbox.bottom > tileTop + TILE_SIZE.y) return null
+    if (doorTiles.isEmpty()) return null
 
-    return DoorTile(tileCol, tileRow)
+    return doorTiles.minByOrNull { door ->
+      val tileCenterX = offset.x + door.col * TILE_SIZE.x + TILE_SIZE.x / 2f
+      val tileCenterY = offset.y + door.row * TILE_SIZE.y + TILE_SIZE.y / 2f
+      val dx = centerX - tileCenterX
+      val dy = centerY - tileCenterY
+      dx * dx + dy * dy
+    }
   }
 
   fun drawPlayer(e: PixelGameEngine) {
