@@ -24,7 +24,7 @@ object Player {
   private const val FRAME_H = 64
   private const val SPRITE_PATH = "resources/sprites/player.png"
 
-  private const val DRAW_SCALE = 0.5f
+  private const val DRAW_SCALE = 0.7f
   private const val DRAW_W = (FRAME_W * DRAW_SCALE).toInt()
   private const val DRAW_H = (FRAME_H * DRAW_SCALE).toInt()
 
