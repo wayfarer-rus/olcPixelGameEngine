@@ -94,7 +94,7 @@ object Player {
     )
   }
 
-  fun update(e: PixelGameEngine, room: Room, elapsedTime: Float) {
+  fun update(e: PixelGameEngine, elapsedTime: Float) {
     val collisionSurface = LayersMap.sprite(Layer.INTERACTABLE)
 
     var dx = 0f

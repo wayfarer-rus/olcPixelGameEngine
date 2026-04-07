@@ -33,7 +33,7 @@ class Vermis : PixelGameEngineImpl() {
     val currentRoom = GreenGrave.rooms[currentRoomIndex]
 
     // Update player movement (reads INTERACTABLE layer from previous frame)
-    Player.update(this, currentRoom, elapsedTime)
+    Player.update(this, elapsedTime)
 
     // Check for room transition (skip one frame after a transition to prevent bounce-back)
     val doorTile = Player.checkDoorOverlap(currentRoom, this)
